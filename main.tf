@@ -29,19 +29,19 @@ data "aws_ami" "LatestAmi" {
 }
 
 # VPC를 생성합니다.
-resource "aws_vpc" "MyVPC04" {
+resource "aws_vpc" "MyVPC08" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
-    Name = "MyVPC04"
+    Name = "MyVPC08"
   }
 }
 
 # Internet Gateway를 생성합니다.
 resource "aws_internet_gateway" "MyIGW" {
-  vpc_id = aws_vpc.MyVPC04.id
+  vpc_id = aws_vpc.MyVPC08.id
 
   tags = {
     Name = "MyIGW"
@@ -49,21 +49,33 @@ resource "aws_internet_gateway" "MyIGW" {
 }
 
 # Public Subnet을 생성합니다.
-resource "aws_subnet" "MyPublicSubnet" {
-  vpc_id     = aws_vpc.MyVPC04.id
+resource "aws_subnet" "MyPublic1Subnet" {
+  vpc_id     = aws_vpc.MyVPC08.id
   cidr_block = "10.0.1.0/24"
   map_public_ip_on_launch = true
   availability_zone = "ap-northeast-2a"
 
   tags = {
-    Name = "MyPublicSubnet"
+    Name = "MyPublic1Subnet"
+  }
+}
+
+# Public Subnet을 생성합니다.
+resource "aws_subnet" "MyPublic2Subnet" {
+  vpc_id     = aws_vpc.MyVPC08.id
+  cidr_block = "10.0.2.0/24"
+  map_public_ip_on_launch = true
+  availability_zone = "ap-northeast-2c"
+
+  tags = {
+    Name = "MyPublic2Subnet"
   }
 }
 
 # Route Table을 생성합니다.
-resource "aws_route_table" "MyPublicRouting" {
+resource "aws_route_table" "MyPublic1Routing" {
   depends_on = [ aws_internet_gateway.MyIGW ]
-  vpc_id = aws_vpc.MyVPC04.id
+  vpc_id = aws_vpc.MyVPC08.id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -71,21 +83,146 @@ resource "aws_route_table" "MyPublicRouting" {
   }
 
   tags = {
-    Name = "MyPublicRouting"
+    Name = "MyPublic1Routing"
+  }
+}
+
+# Route Table을 생성합니다.
+resource "aws_route_table" "MyPublic2Routing" {
+  depends_on = [ aws_internet_gateway.MyIGW ]
+  vpc_id = aws_vpc.MyVPC08.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.MyIGW.id
+  }
+
+  tags = {
+    Name = "MyPublic2Routing"
   }
 }
 
 # Route Table과 Subnet을 연결합니다.
-resource "aws_route_table_association" "MyPublicRouteTableAssociation" {
-  subnet_id      = aws_subnet.MyPublicSubnet.id
-  route_table_id = aws_route_table.MyPublicRouting.id
+resource "aws_route_table_association" "MyPublic1RouteTableAssociation" {
+  subnet_id      = aws_subnet.MyPublic1Subnet.id
+  route_table_id = aws_route_table.MyPublic1Routing.id
+}
+
+# Route Table과 Subnet을 연결합니다.
+resource "aws_route_table_association" "MyPublic2RouteTableAssociation" {
+  subnet_id      = aws_subnet.MyPublic2Subnet.id
+  route_table_id = aws_route_table.MyPublic2Routing.id
+}
+
+# EIP를 생성합니다.
+resource "aws_eip" "MyNatGW1EIP" {
+  domain   = "vpc"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# EIP를 생성합니다.
+resource "aws_eip" "MyNatGW2EIP" {
+  domain   = "vpc"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Nat Gateway를 생성합니다.
+resource "aws_nat_gateway" "MyNatGW1" {
+  depends_on = [aws_internet_gateway.MyIGW]
+  allocation_id = aws_eip.MyNatGW1EIP.id
+  subnet_id     = aws_subnet.MyPublic1Subnet.id
+
+  tags = {
+    Name = "MyNatGW1"
+  }
+}
+
+# Nat Gateway를 생성합니다.
+resource "aws_nat_gateway" "MyNatGW2" {
+  depends_on = [aws_internet_gateway.MyIGW]
+  allocation_id = aws_eip.MyNatGW2EIP.id
+  subnet_id     = aws_subnet.MyPublic2Subnet.id
+
+  tags = {
+    Name = "MyNatGW2"
+  }
+}
+
+# Private Subnet을 생성합니다.
+resource "aws_subnet" "MyPrivate1Subnet" {
+  vpc_id     = aws_vpc.MyVPC08.id
+  cidr_block = "10.0.100.0/24"
+  availability_zone = "ap-northeast-2a"
+
+  tags = {
+    Name = "MyPrivate1Subnet"
+  }
+}
+
+# Private Subnet을 생성합니다.
+resource "aws_subnet" "MyPrivate2Subnet" {
+  vpc_id     = aws_vpc.MyVPC08.id
+  cidr_block = "10.0.200.0/24"
+  availability_zone = "ap-northeast-2c"
+
+  tags = {
+    Name = "MyPrivate2Subnet"
+  }
+}
+
+# Route Table을 생성합니다.
+resource "aws_route_table" "MyPrivate1Routing" {
+  depends_on = [ aws_nat_gateway.MyNatGW1 ]
+  vpc_id = aws_vpc.MyVPC08.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.MyNatGW1.id
+  }
+
+  tags = {
+    Name = "MyPrivate1Routing"
+  }
+}
+
+# Route Table을 생성합니다.
+resource "aws_route_table" "MyPrivate2Routing" {
+  depends_on = [ aws_nat_gateway.MyNatGW2 ]
+  vpc_id = aws_vpc.MyVPC08.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.MyNatGW2.id
+  }
+
+  tags = {
+    Name = "MyPrivate2Routing"
+  }
+}
+
+# Route Table과 Subnet을 연결합니다.
+resource "aws_route_table_association" "MyPrivate1RouteTableAssociation" {
+  subnet_id      = aws_subnet.MyPrivate1Subnet.id
+  route_table_id = aws_route_table.MyPrivate1Routing.id
+}
+
+# Route Table과 Subnet을 연결합니다.
+resource "aws_route_table_association" "MyPrivate2RouteTableAssociation" {
+  subnet_id      = aws_subnet.MyPrivate2Subnet.id
+  route_table_id = aws_route_table.MyPrivate2Routing.id
 }
 
 # Security Group을 생성합니다.
-resource "aws_security_group" "MyPublicSecurityGroup" {
-  name = "MyPublicSecurityGroup"
+resource "aws_security_group" "MySecurityGroup" {
+  name = "MySecurityGroup"
   description = "Permit HTTP(80), HTTPS(443) and SSH(22)"
-  vpc_id = aws_vpc.MyVPC04.id
+  vpc_id = aws_vpc.MyVPC08.id
 
   ingress {
     from_port       = 80
@@ -116,34 +253,6 @@ resource "aws_security_group" "MyPublicSecurityGroup" {
   }
 
   tags = {
-    Name = "MyPublicSecurityGroup"
-  }
-}
-
-# private address를 생성합니다.
-resource "aws_network_interface" "MyWebPrivateAddress" {
-  subnet_id       = aws_subnet.MyPublicSubnet.id
-  private_ips     = ["10.0.0.101"]
-  security_groups = [aws_security_group.MyPublicSecurityGroup.id]
-
-  tags = {
-    Name = "MyWebPrivateAddress"
-  }
-}
-
-# EC2 인스턴스를 생성합니다.
-resource "aws_instance" "MyWeb" {
-  depends_on = [ aws_internet_gateway.MyIGW ]
-  ami           = data.aws_ami.LatestAmi.id
-  instance_type = "t3.micro"
-  key_name = aws_key_pair.tf_keypair.key_name
-
-  network_interface {
-    network_interface_id = aws_network_interface.MyWebPrivateAddress.id
-    device_index         = 0
-  }
-
-  tags = {
-    Name = "MyWeb"
+    Name = "MySecurityGroup"
   }
 }
