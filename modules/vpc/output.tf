@@ -3,7 +3,7 @@ output "vpc_resource" {
 }
 
 output "aws_key_pair" {
-  value = aws_key_pair.tf_keypair
+  value = data.aws_key_pair.tf_keypair
 }
 
 output "aws_ami" {

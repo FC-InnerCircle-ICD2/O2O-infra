@@ -3,13 +3,8 @@ provider "aws" {
 }
 
 # key를 생성합니다.
-resource "aws_key_pair" "tf_keypair" {
-  key_name = "tf_keypair"
-  public_key = file("C:\\sshkey\\tf_keypair.pub")
-
-  tags = {
-    Name = "tf_keypair"
-  }
+data "aws_key_pair" "tf_keypair" {
+  key_name = "dev-app-01"
 }
 
 # ami 를 생성합니다.
@@ -22,7 +17,7 @@ data "aws_ami" "LatestAmi" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-ebs"]
+    values = ["al2023-ami-*-kernel-*-x86_64"]
   }
 
   owners = ["amazon"]
@@ -157,7 +152,7 @@ resource "aws_nat_gateway" "MyNatGW2" {
 # Private Subnet을 생성합니다.
 resource "aws_subnet" "MyPrivate1Subnet" {
   vpc_id     = aws_vpc.MyVPC08.id
-  cidr_block = "10.0.100.0/24"
+  cidr_block = "10.0.3.0/24"
   availability_zone = "ap-northeast-2a"
 
   tags = {
@@ -168,11 +163,22 @@ resource "aws_subnet" "MyPrivate1Subnet" {
 # Private Subnet을 생성합니다.
 resource "aws_subnet" "MyPrivate2Subnet" {
   vpc_id     = aws_vpc.MyVPC08.id
-  cidr_block = "10.0.200.0/24"
+  cidr_block = "10.0.4.0/24"
   availability_zone = "ap-northeast-2c"
 
   tags = {
     Name = "MyPrivate2Subnet"
+  }
+}
+
+# Private Subnet을 생성합니다.
+resource "aws_subnet" "MyPrivate3Subnet" {
+  vpc_id     = aws_vpc.MyVPC08.id
+  cidr_block = "10.0.5.0/24"
+  availability_zone = "ap-northeast-2a"
+
+  tags = {
+    Name = "MyPrivate3Subnet"
   }
 }
 
@@ -206,6 +212,21 @@ resource "aws_route_table" "MyPrivate2Routing" {
   }
 }
 
+# Route Table을 생성합니다.
+resource "aws_route_table" "MyPrivate3Routing" {
+  depends_on = [ aws_nat_gateway.MyNatGW1 ]
+  vpc_id = aws_vpc.MyVPC08.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.MyNatGW1.id
+  }
+
+  tags = {
+    Name = "MyPrivate3Routing"
+  }
+}
+
 # Route Table과 Subnet을 연결합니다.
 resource "aws_route_table_association" "MyPrivate1RouteTableAssociation" {
   subnet_id      = aws_subnet.MyPrivate1Subnet.id
@@ -216,6 +237,12 @@ resource "aws_route_table_association" "MyPrivate1RouteTableAssociation" {
 resource "aws_route_table_association" "MyPrivate2RouteTableAssociation" {
   subnet_id      = aws_subnet.MyPrivate2Subnet.id
   route_table_id = aws_route_table.MyPrivate2Routing.id
+}
+
+# Route Table과 Subnet을 연결합니다.
+resource "aws_route_table_association" "MyPrivate3RouteTableAssociation" {
+  subnet_id      = aws_subnet.MyPrivate3Subnet.id
+  route_table_id = aws_route_table.MyPrivate3Routing.id
 }
 
 # Security Group을 생성합니다.
@@ -254,5 +281,33 @@ resource "aws_security_group" "MySecurityGroup" {
 
   tags = {
     Name = "MySecurityGroup"
+  }
+}
+
+# EC2가 사용할 private address를 생성합니다.
+resource "aws_network_interface" "MyDBPrivateAddress" {
+  subnet_id       = aws_subnet.MyPrivate3Subnet.id
+  private_ips     = ["10.0.5.101"]
+  security_groups = [aws_security_group.MySecurityGroup.id]
+
+  tags = {
+    Name = "MyDBPrivateAddress"
+  }
+}
+
+# EC2 인스턴스를 생성합니다.
+resource "aws_instance" "MyDB" {
+  depends_on = [ aws_nat_gateway.MyNatGW1 ]
+  ami           = data.aws_ami.LatestAmi.id
+  instance_type = "t2.micro"
+  key_name = data.aws_key_pair.tf_keypair.key_name
+
+  network_interface {
+    network_interface_id = aws_network_interface.MyDBPrivateAddress.id
+    device_index         = 0
+  }
+
+  tags = {
+    Name = "MyDB"
   }
 }
