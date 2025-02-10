@@ -1,7 +1,7 @@
 resource "aws_security_group" "MyDBSecurityGroup" {
   name = "MyDBSecurityGroup"
   description = "Permit PostgresSQL(5342)"
-  vpc_id = aws_vpc.MyVPC08.id
+  vpc_id = var.vpc_resource.id
 
   ingress {
     from_port       = 5342
@@ -24,7 +24,7 @@ resource "aws_security_group" "MyDBSecurityGroup" {
 
 resource "aws_db_subnet_group" "MyDBSubnetGroup" {
   name       = "mydbsubnetgroup"
-  subnet_ids = [aws_subnet.MyPrivate1Subnet.id, aws_subnet.MyPrivate2Subnet.id]
+  subnet_ids = [var.vpc_private_1_subnet.id, var.vpc_private_2_subnet.id]
   description = "Subnet group for mydb"
 
   tags = {

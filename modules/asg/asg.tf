@@ -1,11 +1,9 @@
 resource "aws_launch_template" "MyLaunchTemplate" {
-  depends_on = [aws_security_group.MySecurityGroup]
-
   name_prefix = "MyAutoScalingGroup"
-  image_id = data.aws_ami.LatestAmi.id
+  image_id = var.aws_ami.id
   instance_type = "t3.micro"
-  key_name = aws_key_pair.tf_keypair.key_name
-  vpc_security_group_ids = [aws_security_group.MySecurityGroup.id]
+  key_name = var.aws_key_pair.key_name
+  vpc_security_group_ids = [var.vpc_security_group.id]
 
   user_data = filebase64("${path.module}/script.sh")
 
@@ -15,12 +13,12 @@ resource "aws_launch_template" "MyLaunchTemplate" {
 }
 
 resource "aws_autoscaling_group" "MyAutoScalingGroup" {
-  depends_on = [aws_launch_template.MyLaunchTemplate, aws_nat_gateway.MyNatGW1, aws_nat_gateway.MyNatGW2]
+  depends_on = [aws_launch_template.MyLaunchTemplate]
   name = "MyAutoScalingGroup"
   desired_capacity   = 2
   max_size           = 4
   min_size           = 2
-  vpc_zone_identifier = [aws_subnet.MyPrivate1Subnet.id, aws_subnet.MyPrivate2Subnet.id]
+  vpc_zone_identifier = [var.vpc_private_1_subnet.id, var.vpc_private_2_subnet.id]
 
   launch_template {
     id      = aws_launch_template.MyLaunchTemplate.id
@@ -40,5 +38,5 @@ resource "aws_autoscaling_group" "MyAutoScalingGroup" {
 
 resource "aws_autoscaling_attachment" "MyAutoScalingALBattachment" {
   autoscaling_group_name = aws_autoscaling_group.MyAutoScalingGroup.id
-  lb_target_group_arn    = aws_lb_target_group.MyALBtargetgroup.arn
+  lb_target_group_arn    = var.aws_lb_target_group.arn
 }
