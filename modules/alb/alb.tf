@@ -1,10 +1,9 @@
 resource "aws_lb_target_group" "MyALBtargetgroup" {
-  depends_on = [aws_vpc.MyVPC08]
   name     = "MyALBtargetgroup"
   target_type = "instance"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.MyVPC08.id
+  vpc_id   = var.vpc_resource.id
 }
 
 resource "aws_lb" "MyALB" {
@@ -12,8 +11,8 @@ resource "aws_lb" "MyALB" {
   name               = "MyALB"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.MySecurityGroup.id]
-  subnets            = [aws_subnet.MyPublic1Subnet.id, aws_subnet.MyPublic2Subnet.id]
+  security_groups    = [var.vpc_security_group.id]
+  subnets            = [var.vpc_public_1_subnet.id, var.vpc_public_2_subnet.id]
 
   tags = {
     Name = "MyALB"
