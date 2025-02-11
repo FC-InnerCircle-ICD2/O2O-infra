@@ -10,22 +10,11 @@ variable "vpc_security_group" {
   description = "VPC Security Group"
 }
 
-variable "nat_1_gateway" {
-  description = "NAT Gateway 1"
+variable "private_subnet_ids" {
+  type = list(string)
+  description = "VPC Private Subnet Ids"
 }
 
-variable "nat_2_gateway" {
-  description = "NAT Gateway 2"
-}
-
-variable "vpc_private_1_subnet" {
-  description = "VPC Private Subnet 1"
-}
-
-variable "vpc_private_2_subnet" {
-  description = "VPC Private Subnet 2"
-}
-
-variable "aws_lb_target_group" {
-  description = "Load Balancer Target Group"
+variable "alb_target_group" {
+  description = "Application Load Balencer Target Group"
 }

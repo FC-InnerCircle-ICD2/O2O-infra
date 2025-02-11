@@ -1,5 +1,9 @@
-variable "vpc_resource" {
-  description = "VPC"
+variable "key_pair" {
+  description = "AWS key pair"
+}
+
+variable "ami" {
+  description = "AWS AMI"
 }
 
 variable "vpc_security_group" {
