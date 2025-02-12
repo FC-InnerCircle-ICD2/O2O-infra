@@ -17,6 +17,7 @@ module "ec2" {
   ami = module.vpc.ami
   vpc_security_group = module.vpc.security_group
   public_subnet_ids = module.vpc.public_subnet_ids
+  private_subnet_ids = module.vpc.private_subnet_ids
 
   depends_on = [ module.vpc.vpc_resource ]
 }
