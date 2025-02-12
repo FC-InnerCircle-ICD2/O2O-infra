@@ -14,6 +14,10 @@ output "security_group" {
   value = aws_security_group.sg
 }
 
+output "availability_zones" {
+  value = local.availability_zones
+}
+
 output "public_subnet_ids" {
   value = aws_subnet.public[*].id
 }

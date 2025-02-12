@@ -27,8 +27,11 @@ docker network create o2o-network
 
 echo "Setup Docker Network!"
 
+# backend 폴더 생성
+mkdir -p /home/ec2-user/backend
+
 # Docker Compose 파일 생성
-cat <<EOT > /home/ec2-user/docker-compose.yml
+cat <<EOT > /home/ec2-user/backend/docker-compose.yml
 version: "3.8"
 
 services:
@@ -56,8 +59,8 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+      POSTGRES_USER: "${postgres_user}"
+      POSTGRES_PASSWORD: "${postgres_password}"
     volumes:
       - /home/ec2-user/data/postgres-data:/var/lib/postgresql/data
     networks:
@@ -69,7 +72,7 @@ networks:
 EOT
 
 # Docker Compose 실행
-cd /home/ec2-user
+cd /home/ec2-user/backend
 docker-compose up -d
 
 echo "Setup completed successfully!"

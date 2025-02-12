@@ -12,10 +12,11 @@ resource "aws_network_interface" "bastion" {
 
 # Bastion EC2 인스턴스를 생성합니다.
 resource "aws_instance" "bastion" {
-  ami           = var.ami.id
-  instance_type = "t2.micro"
-  key_name      = var.key_pair.key_name
-  count         = length(var.public_subnet_ids)
+  ami               = var.ami.id
+  instance_type     = "t2.micro"
+  key_name          = var.key_pair.key_name
+  availability_zone = var.availability_zones[count.index]
+  count             = length(var.public_subnet_ids)
 
   network_interface {
     network_interface_id = aws_network_interface.bastion[count.index].id
@@ -23,23 +24,33 @@ resource "aws_instance" "bastion" {
   }
 
   tags = {
-    Name = "prod-bastion-${count.index + 1}"
+    Name = "prod-bastion-instance-${count.index + 1}"
   }
 }
 
-# Database EC2 인스턴스를 생성합니다.
-resource "aws_instance" "database_app_instance" {
-  ami                         = var.ami.id
-  instance_type               = "t2.micro"
-  key_name                    = var.key_pair.key_name
-  subnet_id                   = var.private_subnet_ids[2]
-  vpc_security_group_ids      = [var.vpc_security_group.id]
-  private_ip                  = "10.0.5.100"
-  associate_public_ip_address = false
+# Database를 모아둔 EC2 인스턴스에 환경변수를 전달합니다.
+data "template_file" "user_data" {
+  template = file("${path.module}/script.sh")
 
-  user_data = filebase64("${path.module}/script.sh")
+  vars = {
+    postgres_user     = var.postgres_user
+    postgres_password = var.postgres_password
+  }
+}
+
+# Database를 모아둔 EC2 인스턴스를 생성합니다.
+resource "aws_instance" "db" {
+  ami                    = var.ami.id
+  instance_type          = "t2.micro"
+  key_name               = var.key_pair.key_name
+  availability_zone      = var.availability_zones[0]
+  subnet_id              = var.private_subnet_ids[1]
+  vpc_security_group_ids = [var.vpc_security_group.id]
+  private_ip             = "10.0.4.100"
+
+  user_data = data.template_file.user_data.user_data
 
   tags = {
-    Name = "prod-database-app"
+    Name = "prod-db-instance"
   }
 }

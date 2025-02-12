@@ -18,6 +18,9 @@ module "ec2" {
   vpc_security_group = module.vpc.security_group
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
+  availability_zones = module.vpc.availability_zones
+  postgres_user      = var.postgres_user
+  postgres_password  = var.postgres_password
 
   depends_on = [module.vpc.vpc_resource]
 }

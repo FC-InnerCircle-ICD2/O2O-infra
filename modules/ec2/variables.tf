@@ -10,6 +10,10 @@ variable "vpc_security_group" {
   description = "VPC Security Group"
 }
 
+variable "availability_zones" {
+  description = "Availability Zones"
+}
+
 variable "public_subnet_ids" {
   type        = list(string)
   description = "VPC Public Subnet Ids"
@@ -18,4 +22,14 @@ variable "public_subnet_ids" {
 variable "private_subnet_ids" {
   type        = list(string)
   description = "VPC Public Subnet Ids"
+}
+
+variable "postgres_user" {
+  type        = string
+  description = "postgres user"
+}
+
+variable "postgres_password" {
+  type        = string
+  description = "postgres_password"
 }
