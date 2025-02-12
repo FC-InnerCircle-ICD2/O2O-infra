@@ -1,5 +1,4 @@
 #!/bin/bash
-exec > >(tee /var/log/user-data.log | logger -t user-data) 2>&1
 
 # Docker 설치
 sudo yum update -y
@@ -15,23 +14,58 @@ sudo usermod -a -G docker ec2-user
 # docker 명령어가 바로 적용이 안될 때
 newgrp docker
 
+echo "Setup completed Docker!"
+
 # Docker Compose 설치
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
 echo "Setup completed Docker Compose!"
 
+# Docker Network 생성
+docker network create o2o-network
+
+echo "Setup Docker Network!"
+
 # Docker Compose 파일 생성
 cat <<EOT > /home/ec2-user/docker-compose.yml
-version: '3'
+version: "3.8"
+
 services:
-  my-app:
-    image: ${ECR_URL}/${IMAGE_NAME}
-    restart: always
+  store-mongo:
+    container_name: store-mongo
+    image: yong7317/mongo-o2o:latest
     ports:
-      - "3000:3000"
+      - '27017:27017'
+    volumes:
+      - /home/ec2-user/data/mongo-data:/data/db
+    networks:
+      - o2o-network
+
+  store-redis:
+    container_name: store-redis
+    image: redis:7.0.15
+    ports:
+      - '6379:6379'
+    networks:
+      - o2o-network
+
+  order-postgres:
+    container_name: order-postgres
+    image: postgres:17.2
+    ports:
+      - '5432:5432'
     environment:
-      NODE_ENV: production
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - /home/ec2-user/data/postgres-data:/var/lib/postgresql/data
+    networks:
+      - o2o-network
+
+networks:
+  o2o-network:
+    external: true
 EOT
 
 # Docker Compose 실행

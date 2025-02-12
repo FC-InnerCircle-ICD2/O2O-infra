@@ -11,7 +11,7 @@ variable "vpc_security_group" {
 }
 
 variable "private_subnet_ids" {
-  type = list(string)
+  type        = list(string)
   description = "VPC Private Subnet Ids"
 }
 

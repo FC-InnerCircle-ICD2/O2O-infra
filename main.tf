@@ -3,23 +3,23 @@ module "vpc" {
 }
 
 module "alb" {
-  source = "./modules/alb"
-  vpc_resource = module.vpc.vpc_resource
+  source             = "./modules/alb"
+  vpc_resource       = module.vpc.vpc_resource
   vpc_security_group = module.vpc.security_group
-  public_subnet_ids = module.vpc.public_subnet_ids
+  public_subnet_ids  = module.vpc.public_subnet_ids
 
-  depends_on = [ module.vpc.vpc_resource ]
+  depends_on = [module.vpc.vpc_resource]
 }
 
 module "ec2" {
-  source = "./modules/ec2"
-  key_pair = module.vpc.key_pair
-  ami = module.vpc.ami
+  source             = "./modules/ec2"
+  key_pair           = module.vpc.key_pair
+  ami                = module.vpc.ami
   vpc_security_group = module.vpc.security_group
-  public_subnet_ids = module.vpc.public_subnet_ids
+  public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
 
-  depends_on = [ module.vpc.vpc_resource ]
+  depends_on = [module.vpc.vpc_resource]
 }
 
 # module "asg" {
