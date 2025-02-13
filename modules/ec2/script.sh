@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# script.sh 실행 로그 기록
+exec > /var/log/script.log 2>&1
+
 # Docker 설치
 sudo yum update -y
 sudo yum install -y docker
@@ -28,10 +31,29 @@ docker network create o2o-network
 echo "Setup Docker Network!"
 
 # backend 폴더 생성
-mkdir -p /home/ec2-user/backend
+sudo -u ec2-user mkdir -p /home/ec2-user/backend
+
+echo AWS_ACCESS_KEY_ID=${aws_access_key_id} >> /home/ec2-user/.bashrc
+echo AWS_SECRET_ACCESS_KEY=${aws_secret_access_key} >> /home/ec2-user/.bashrc
+echo AWS_DEFAULT_REGION=${aws_default_region} >> /home/ec2-user/.bashrc
+source ~/.bashrc
+
+echo "=== Config File Download start to S3 ==="
+
+# AWS CLI를 사용하여 파일 다운로드
+aws s3 cp "s3://${s3_flyway_bucket}/" "/home/ec2-user/backend" --recursive
+
+# 다운로드 성공 여부 확인
+if [ $? -eq 0 ]; then
+  echo "Flyway Config File Download success : /home/ec2-user/backend"
+else
+  echo "Flyway Config File Download Fali!"
+fi
+
+echo "=== Config File Download Completed ==="
 
 # Docker Compose 파일 생성
-cat <<EOT > /home/ec2-user/backend/docker-compose.yml
+sudo -u ec2-user cat <<EOT > /home/ec2-user/backend/docker-compose.yml
 version: "3.8"
 
 services:
@@ -59,10 +81,24 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_USER: "${postgres_user}"
-      POSTGRES_PASSWORD: "${postgres_password}"
+      POSTGRES_USER: ${postgres_user}
+      POSTGRES_PASSWORD: ${postgres_password}
     volumes:
       - /home/ec2-user/data/postgres-data:/var/lib/postgresql/data
+    networks:
+      - o2o-network
+
+  migrate-postgres:
+    image: flyway/flyway:7
+    container_name: migrate-postgres
+    environment:
+      - FLYWAY_DB_URL=jdbc:postgresql://order-postgres/o2o
+      - FLYWAY_DB_USER=${postgres_user}
+      - FLYWAY_DB_PASSWORD=${postgres_user}
+    command: migrate
+    volumes:
+      - /home/ec2-user/backend/flyway/flyway.conf:/flyway/conf/flyway.conf
+      - /home/ec2-user/backend/flyway/migration:/flyway/sql
     networks:
       - o2o-network
 

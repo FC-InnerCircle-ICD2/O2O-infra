@@ -15,7 +15,6 @@ data "aws_key_pair" "tf_keypair" {
 
 # ami 를 생성합니다.
 data "aws_ami" "LatestAmi" {
-  most_recent = true
   filter {
     name   = "owner-alias"
     values = ["amazon"]
@@ -23,7 +22,7 @@ data "aws_ami" "LatestAmi" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-kernel-*-x86_64"]
+    values = ["al2023-ami-2023.6.20250203.1-kernel-6.1-x86_64"]
   }
 
   owners = ["amazon"]
