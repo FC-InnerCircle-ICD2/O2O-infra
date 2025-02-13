@@ -15,6 +15,7 @@ module "ec2" {
   source                = "./modules/ec2"
   key_pair              = module.vpc.key_pair
   ami                   = module.vpc.ami
+  vpc_resource          = module.vpc.vpc_resource
   vpc_security_group    = module.vpc.security_group
   public_subnet_ids     = module.vpc.public_subnet_ids
   private_subnet_ids    = module.vpc.private_subnet_ids
@@ -40,4 +41,6 @@ module "asg" {
   aws_access_key_id       = var.aws_access_key_id
   aws_secret_access_key   = var.aws_secret_access_key
   aws_default_region      = var.aws_default_region
+
+  depends_on = [module.ec2.db_instance]
 }

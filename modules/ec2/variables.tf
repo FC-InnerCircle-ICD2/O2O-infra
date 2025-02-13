@@ -1,3 +1,7 @@
+variable "vpc_resource" {
+  description = "VPC"
+}
+
 variable "key_pair" {
   description = "AWS key pair"
 }

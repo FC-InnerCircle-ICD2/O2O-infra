@@ -6,6 +6,7 @@ data "template_file" "app_instance_user_data" {
     aws_access_key_id     = var.aws_access_key_id
     aws_secret_access_key = var.aws_secret_access_key
     aws_default_region    = var.aws_default_region
+    s3_frontend_shop_bucket = var.s3_frontend_shop_bucket
   }
 }
 
