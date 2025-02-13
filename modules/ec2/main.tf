@@ -29,14 +29,13 @@ resource "aws_instance" "bastion" {
 }
 
 # Database를 모아둔 EC2 인스턴스에 환경변수를 전달합니다.
-data "template_file" "user_data" {
+data "template_file" "db_instance_user_data" {
   template = file("${path.module}/script.sh")
 
   vars = {
     postgres_user         = var.postgres_user
     postgres_password     = var.postgres_password
     s3_flyway_bucket      = var.s3_flyway_bucket
-    s3_key                = var.s3_key
     aws_access_key_id     = var.aws_access_key_id
     aws_secret_access_key = var.aws_secret_access_key
     aws_default_region    = var.aws_default_region
@@ -53,7 +52,7 @@ resource "aws_instance" "db" {
   vpc_security_group_ids = [var.vpc_security_group.id]
   private_ip             = "10.0.4.100"
 
-  user_data = data.template_file.user_data.rendered
+  user_data = data.template_file.db_instance_user_data.rendered
 
   tags = {
     Name = "prod-db-instance"

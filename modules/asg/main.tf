@@ -1,11 +1,22 @@
+data "template_file" "app_instance_user_data" {
+  template = file("${path.module}/script.sh")
+
+  vars = {
+    frontend_shop_bucket  = var.frontend_shop_bucket
+    aws_access_key_id     = var.aws_access_key_id
+    aws_secret_access_key = var.aws_secret_access_key
+    aws_default_region    = var.aws_default_region
+  }
+}
+
 resource "aws_launch_template" "MyLaunchTemplate" {
   name_prefix            = "MyAutoScalingGroup"
-  image_id               = var.aws_ami.id
-  instance_type          = "t3.micro"
-  key_name               = var.aws_key_pair.key_name
+  image_id               = var.ami.id
+  instance_type          = "t2.micro"
+  key_name               = var.key_pair.key_name
   vpc_security_group_ids = [var.vpc_security_group.id]
 
-  user_data = filebase64("${path.module}/script.sh")
+  user_data = data.template_file.app_instance_user_data.rendered
 
   lifecycle {
     create_before_destroy = true
@@ -18,7 +29,7 @@ resource "aws_autoscaling_group" "MyAutoScalingGroup" {
   desired_capacity    = 2
   max_size            = 4
   min_size            = 2
-  vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[1]]
+  vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[2]]
 
   launch_template {
     id      = aws_launch_template.MyLaunchTemplate.id

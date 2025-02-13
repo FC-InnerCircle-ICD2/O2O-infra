@@ -39,11 +39,6 @@ variable "s3_flyway_bucket" {
   description = "S3 flyway bucket"
 }
 
-variable "s3_key" {
-  type        = string
-  description = "S3 key"
-}
-
 variable "aws_access_key_id" {
   description = "aws access key id"
 }

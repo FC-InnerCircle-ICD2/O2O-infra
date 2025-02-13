@@ -22,7 +22,6 @@ module "ec2" {
   postgres_user         = var.postgres_user
   postgres_password     = var.postgres_password
   s3_flyway_bucket      = var.s3_flyway_bucket
-  s3_key                = var.s3_key
   aws_access_key_id     = var.aws_access_key_id
   aws_secret_access_key = var.aws_secret_access_key
   aws_default_region    = var.aws_default_region
@@ -30,12 +29,15 @@ module "ec2" {
   depends_on = [module.vpc.vpc_resource]
 }
 
-# module "asg" {
-#   source = "./modules/asg"
-#   aws_key_pair = module.vpc.key_pair
-#   aws_ami = module.vpc.ami
-#   vpc_security_group = module.vpc.security_group
-#   private_subnet_ids = module.vpc.private_subnet_ids
-
-#   depends_on = [ module.vpc.security_group, module.vpc.nat_gateway[0], module.vpc.nat_gateway[0] ]
-# }
+module "asg" {
+  source                = "./modules/asg"
+  key_pair              = module.vpc.key_pair
+  ami                   = module.vpc.ami
+  vpc_security_group    = module.vpc.security_group
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  alb_target_group      = module.alb.alb_target_group
+  frontend_shop_bucket  = var.frontend_shop_bucket
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+  aws_default_region    = var.aws_default_region
+}
