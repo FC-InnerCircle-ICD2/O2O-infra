@@ -193,7 +193,7 @@ source ~/.bashrc
 echo "=== Config File Download start to S3 ==="
 
 # AWS CLI를 사용하여 파일 다운로드
-aws s3 cp "s3://${frontend_shop_bucket}" "/home/ec2-user/frontend/shop" --recursive
+aws s3 cp "s3://${s3_frontend_shop_bucket}" "/home/ec2-user/frontend/shop" --recursive
 
 # 다운로드 성공 여부 확인
 if [ $? -eq 0 ]; then

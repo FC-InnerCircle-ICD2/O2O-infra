@@ -25,7 +25,7 @@ variable "aws_default_region" {
   description = "aws default region"
 }
 
-variable "frontend_shop_bucket" {
+variable "s3_frontend_shop_bucket" {
   type        = string
   description = "frontend shop bucket"
 }

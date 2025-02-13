@@ -19,7 +19,7 @@ variable "alb_target_group" {
   description = "Application Load Balencer Target Group"
 }
 
-variable "frontend_shop_bucket" {
+variable "s3_frontend_shop_bucket" {
   type        = string
   description = "frontend shop bucket"
 }

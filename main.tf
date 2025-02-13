@@ -30,14 +30,14 @@ module "ec2" {
 }
 
 module "asg" {
-  source                = "./modules/asg"
-  key_pair              = module.vpc.key_pair
-  ami                   = module.vpc.ami
-  vpc_security_group    = module.vpc.security_group
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  alb_target_group      = module.alb.alb_target_group
-  frontend_shop_bucket  = var.frontend_shop_bucket
-  aws_access_key_id     = var.aws_access_key_id
-  aws_secret_access_key = var.aws_secret_access_key
-  aws_default_region    = var.aws_default_region
+  source                  = "./modules/asg"
+  key_pair                = module.vpc.key_pair
+  ami                     = module.vpc.ami
+  vpc_security_group      = module.vpc.security_group
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  alb_target_group        = module.alb.alb_target_group
+  s3_frontend_shop_bucket = var.s3_frontend_shop_bucket
+  aws_access_key_id       = var.aws_access_key_id
+  aws_secret_access_key   = var.aws_secret_access_key
+  aws_default_region      = var.aws_default_region
 }
