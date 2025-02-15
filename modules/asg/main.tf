@@ -42,7 +42,7 @@ resource "aws_autoscaling_group" "ProdAutoScalingGroup" {
   }
 }
 
-resource "aws_autoscaling_attachment" "MyAutoScalingALBattachment" {
+resource "aws_autoscaling_attachment" "ProdAutoScalingALBattachment" {
   autoscaling_group_name = aws_autoscaling_group.ProdAutoScalingGroup.id
   lb_target_group_arn    = var.alb_target_group.arn
 }

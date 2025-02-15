@@ -13,99 +13,99 @@ sudo systemctl enable nginx
 nginx -v
 
 # nginx.conf 파일 생성
-cat <<EOT > /etc/nginx/nginx.conf
-user root;
-worker_processes auto;
-error_log /var/log/nginx/error.log notice;
-pid /run/nginx.pid;
+# cat <<EOT > /etc/nginx/nginx.conf
+# user root;
+# worker_processes auto;
+# error_log /var/log/nginx/error.log notice;
+# pid /run/nginx.pid;
 
-include /usr/share/nginx/modules/*.conf;
+# include /usr/share/nginx/modules/*.conf;
 
-events {
-  worker_connections 1024;
-}
+# events {
+#   worker_connections 1024;
+# }
 
-http {
-  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
-                    '"$http_user_agent" "$http_x_forwarded_for"';
+# http {
+#   log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+#                     '\$status \$body_bytes_sent "\$http_referer" '
+#                     '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-  access_log  /var/log/nginx/access.log  main;
+#   access_log  /var/log/nginx/access.log  main;
 
-  sendfile            on;
-  tcp_nopush          on;
-  keepalive_timeout   65;
-  types_hash_max_size 4096;
+#   sendfile            on;
+#   tcp_nopush          on;
+#   keepalive_timeout   65;
+#   types_hash_max_size 4096;
 
-  include             /etc/nginx/mime.types;
-  default_type        application/octet-stream;
+#   include             /etc/nginx/mime.types;
+#   default_type        application/octet-stream;
 
-  include /etc/nginx/conf.d/*.conf;
+#   include /etc/nginx/conf.d/*.conf;
 
-  server {
-    listen       80;
-    listen       [::]:80;
-    server_name  clientApplication;
+#   server {
+#     listen       80;
+#     listen       [::]:80;
+#     server_name  clientApplication;
 
-    location / {
-      proxy_pass http://127.0.0.1:3000;
-      proxy_set_header Host              $host;
-      proxy_set_header X-Real-IP         $remote_addr;
-      proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-    }
+#     location / {
+#       proxy_pass http://127.0.0.1:3000;
+#       proxy_set_header Host              \$host;
+#       proxy_set_header X-Real-IP         \$remote_addr;
+#       proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+#     }
 
-    location ~ ^/(api|swagger-ui|v3/api-docs) {
-      proxy_pass http://127.0.0.1:8083;
-      proxy_set_header Host              $host;
-      proxy_set_header X-Real-IP         $remote_addr;
-      proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-    }
+#     location ~ ^/(api|swagger-ui|v3/api-docs) {
+#       proxy_pass http://127.0.0.1:8083;
+#       proxy_set_header Host              \$host;
+#       proxy_set_header X-Real-IP         \$remote_addr;
+#       proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+#     }
 
-    include /etc/nginx/default.d/*.conf;
+#     include /etc/nginx/default.d/*.conf;
 
-    error_page 404 /404.html;
-    location = /404.html {
-    }
+#     error_page 404 /404.html;
+#     location = /404.html {
+#     }
 
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-    }
-  }
+#     error_page 500 502 503 504 /50x.html;
+#     location = /50x.html {
+#     }
+#   }
 
-  server {
-    listen       8082;
-    server_name  adminApplication;
+#   server {
+#     listen       8082;
+#     server_name  adminApplication;
 
-    location / {
-      root  /home/ec2-user/frontend/shop/dist;
-      index index.html;
-      try_files $uri /index.html;
-    }
+#     location / {
+#       root  /home/ec2-user/frontend/shop/dist;
+#       index index.html;
+#       try_files \$uri /index.html;
+#     }
 
-    location ~ ^/(api|swagger-ui|v3/api-docs) {
-      proxy_pass http://127.0.0.1:8084;
-      proxy_set_header Host              $host;
-      proxy_set_header X-Real-IP         $remote_addr;
-      proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+#     location ~ ^/(api|swagger-ui|v3/api-docs) {
+#       proxy_pass http://127.0.0.1:8084;
+#       proxy_set_header Host              \$host;
+#       proxy_set_header X-Real-IP         \$remote_addr;
+#       proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
 
-      proxy_http_version 1.1;
-      proxy_set_header   Connection keep-alive;
-      proxy_buffering    off;
+#       proxy_http_version 1.1;
+#       proxy_set_header   Connection keep-alive;
+#       proxy_buffering    off;
 
-      add_header Cache-Control no-cache;
-      add_header X-Accel-Buffering no;
-    }
+#       add_header Cache-Control no-cache;
+#       add_header X-Accel-Buffering no;
+#     }
 
-    error_page 404 /404.html;
-    location = /404.html {
-    }
+#     error_page 404 /404.html;
+#     location = /404.html {
+#     }
 
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-    }
-  }
-}
-EOT
+#     error_page 500 502 503 504 /50x.html;
+#     location = /50x.html {
+#     }
+#   }
+# }
+# EOT
 
 # Nginx 상태 확인
 sudo systemctl status nginx
@@ -135,27 +135,24 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 echo "Setup completed Docker Compose!"
 
-# Docker Network 생성
-docker network create o2o-network
-
-echo "Setup Docker Network!"
-
 # .aws 디렉토리가 없으면 생성
-sudo -u mkdir -p ~/.aws
+sudo -u ec2-user mkdir -p /home/ec2-user/.aws
 
 # credentials 파일에 AWS 액세스 키와 비밀 키 설정
-cat > ~/.aws/credentials <<EOL
+cat > /home/ec2-user/.aws/credentials <<EOL
 [default]
 aws_access_key_id=${aws_access_key_id}
 aws_secret_access_key=${aws_secret_access_key}
 EOL
 
 # config 파일에 리전 설정
-cat > ~/.aws/config <<EOL
+cat > /home/ec2-user/.aws/config <<EOL
 [default]
 region=${aws_default_region}
 output=json
 EOL
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user/.aws
 
 aws configure list
 
@@ -176,8 +173,13 @@ fi
 
 echo "=== Backend .env File Download Completed ==="
 
+# Docker Network 생성
+docker network create o2o-network
+
+echo "Setup Docker Network!"
+
 # Docker Compose 파일 생성
-sudo -u ec2-user tee <<EOT > /home/ec2-user/backend/docker-compose.yml
+cat <<EOT > /home/ec2-user/backend/docker-compose.yml
 version: "3.8"
 
 services:
@@ -210,6 +212,9 @@ networks:
     external: true
 EOT
 
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/log
+
 # Backend Docker Compose 실행
 cd /home/ec2-user/backend
 docker-compose up -d
@@ -232,7 +237,7 @@ fi
 echo "=== Frontend Shop File Download Completed ==="
 
 # Docker Compose 파일 생성
-sudo -u ec2-user tee <<EOT > /home/ec2-user/frontend/docker-compose.yml
+cat <<EOT > /home/ec2-user/frontend/docker-compose.yml
 version: "3.8"
 
 services:
@@ -248,6 +253,8 @@ networks:
   o2o-network:
     external: true
 EOT
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user/frontend/docker-compose.yml
 
 # Frontend Docker Compose 실행
 cd /home/ec2-user/frontend

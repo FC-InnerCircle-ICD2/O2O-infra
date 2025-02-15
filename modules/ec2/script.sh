@@ -25,27 +25,24 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 echo "Setup completed Docker Compose!"
 
-# Docker Network 생성
-docker network create o2o-network
-
-echo "Setup Docker Network!"
-
 # .aws 디렉토리가 없으면 생성
-mkdir -p ~/.aws
+sudo -u ec2-user mkdir -p /home/ec2-user/.aws
 
 # credentials 파일에 AWS 액세스 키와 비밀 키 설정
-cat > ~/.aws/credentials <<EOL
+cat > /home/ec2-user/.aws/credentials <<EOL
 [default]
 aws_access_key_id=${aws_access_key_id}
 aws_secret_access_key=${aws_secret_access_key}
 EOL
 
 # config 파일에 리전 설정
-cat > ~/.aws/config <<EOL
+cat > /home/ec2-user/.aws/config <<EOL
 [default]
 region=${aws_default_region}
 output=json
 EOL
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user/.aws
 
 aws configure list
 
@@ -66,8 +63,13 @@ fi
 
 echo "=== Config File Download Completed ==="
 
+# Docker Network 생성
+docker network create o2o-network
+
+echo "Setup Docker Network!"
+
 # Docker Compose 파일 생성
-sudo -u ec2-user tee <<EOT > /home/ec2-user/backend/docker-compose.yml
+cat <<EOT > /home/ec2-user/backend/docker-compose.yml
 version: "3.8"
 
 services:
@@ -97,6 +99,7 @@ services:
     environment:
       POSTGRES_USER: ${postgres_user}
       POSTGRES_PASSWORD: ${postgres_password}
+      POSTGRES_DB: o2o
     volumes:
       - /home/ec2-user/data/postgres-data:/var/lib/postgresql/data
     networks:
@@ -120,6 +123,9 @@ networks:
   o2o-network:
     external: true
 EOT
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
+sudo chown -R ec2-user:ec2-user /home/ec2-user/data
 
 # Docker Compose 실행
 cd /home/ec2-user/backend
