@@ -3,6 +3,10 @@
 # script.sh 실행 로그 기록
 exec > /var/log/script.log 2>&1
 
+sudo timedatectl set-timezone Asia/Seoul
+
+timedatectl
+
 # Docker 설치
 sudo yum update -y
 sudo yum install -y docker
