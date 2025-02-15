@@ -1,4 +1,4 @@
-resource "aws_launch_template" "ProdLaunchTemplate" {
+resource "aws_launch_template" "ProdClientLaunchTemplate" {
   name_prefix            = "ProdClientAutoScalingGroup"
   image_id               = var.ami.id
   instance_type          = "t3.large"
@@ -19,7 +19,7 @@ resource "aws_launch_template" "ProdLaunchTemplate" {
 }
 
 resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
-  depends_on          = [aws_launch_template.ProdLaunchTemplate]
+  depends_on          = [aws_launch_template.ProdClientLaunchTemplate]
   name                = "ProdClientAutoScalingGroup"
   desired_capacity    = 1
   max_size            = 2
@@ -27,8 +27,8 @@ resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
   vpc_zone_identifier = [var.private_subnet_ids[0]]
 
   launch_template {
-    id      = aws_launch_template.ProdLaunchTemplate.id
-    version = aws_launch_template.ProdLaunchTemplate.latest_version
+    id      = aws_launch_template.ProdClientLaunchTemplate.id
+    version = aws_launch_template.ProdClientLaunchTemplate.latest_version
   }
 
   tag {
@@ -42,14 +42,14 @@ resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
   }
 }
 
-resource "aws_autoscaling_attachment" "ProdAutoScalingALBattachment" {
+resource "aws_autoscaling_attachment" "ProdClientAutoScalingALBattachment" {
   autoscaling_group_name = aws_autoscaling_group.ProdClientAutoScalingGroup.id
   lb_target_group_arn    = var.alb_target_group[0].arn
 }
 
 ####################################################################################################################
 
-resource "aws_launch_template" "ProdLaunchTemplate" {
+resource "aws_launch_template" "ProdAdminLaunchTemplate" {
   name_prefix            = "ProdAdminAutoScalingGroup"
   image_id               = var.ami.id
   instance_type          = "t3.large"
@@ -70,7 +70,7 @@ resource "aws_launch_template" "ProdLaunchTemplate" {
 }
 
 resource "aws_autoscaling_group" "ProdAdminAutoScalingGroup" {
-  depends_on          = [aws_launch_template.ProdLaunchTemplate]
+  depends_on          = [aws_launch_template.ProdAdminLaunchTemplate]
   name                = "ProdAdminAutoScalingGroup"
   desired_capacity    = 1
   max_size            = 2
@@ -78,8 +78,8 @@ resource "aws_autoscaling_group" "ProdAdminAutoScalingGroup" {
   vpc_zone_identifier = [var.private_subnet_ids[2]]
 
   launch_template {
-    id      = aws_launch_template.ProdLaunchTemplate.id
-    version = aws_launch_template.ProdLaunchTemplate.latest_version
+    id      = aws_launch_template.ProdAdminLaunchTemplate.id
+    version = aws_launch_template.ProdAdminLaunchTemplate.latest_version
   }
 
   tag {
@@ -93,7 +93,7 @@ resource "aws_autoscaling_group" "ProdAdminAutoScalingGroup" {
   }
 }
 
-resource "aws_autoscaling_attachment" "ProdAutoScalingALBattachment" {
+resource "aws_autoscaling_attachment" "ProdAdminAutoScalingALBattachment" {
   autoscaling_group_name = aws_autoscaling_group.ProdAdminAutoScalingGroup.id
   lb_target_group_arn    = var.alb_target_group[1].arn
 }

@@ -97,6 +97,9 @@ sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
 cd /home/ec2-user/backend
 docker-compose up -d
 
+# frontend 폴더 생성
+sudo -u ec2-user mkdir -p /home/ec2-user/frontend
+
 # Frontend Docker Compose 파일 생성
 cat <<EOT > /home/ec2-user/frontend/docker-compose.yml
 version: "3.8"
@@ -197,5 +200,33 @@ sudo systemctl status nginx
 
 # Nginx 실행하기
 sudo service nginx start
+
+# backend deploy 파일 생성
+cat > /home/ec2-user/backend_deploy.sh <<EOL
+#!/bin/bash
+
+docker stop app-client || true
+docker rm app-client || true
+docker rmi yong7317/application-client:latest || true
+docker pull yong7317/application-client:latest
+docker-compose -f /home/ec2-user/backend/docker-compose.yml up -d
+EOL
+
+sudo chown ec2-user:ec2-user /home/ec2-user/backend_deploy.sh
+sudo chmod +x backend_deploy.sh
+
+# frontend deploy 파일 생성
+cat > /home/ec2-user/frontend_deploy.sh <<EOL
+#!/bin/bash
+
+docker stop o2o-fe || true
+docker rm o2o-fe || true
+docker rmi yong7317/o2o-fe:latest || true
+docker pull yong7317/o2o-fe:latest
+docker-compose -f /home/ec2-user/frontend/docker-compose.yml up -d
+EOL
+
+sudo chown ec2-user:ec2-user /home/ec2-user/frontend_deploy.sh
+sudo chmod +x frontend_deploy.sh
 
 echo "Setup completed successfully!"

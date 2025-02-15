@@ -105,7 +105,7 @@ sudo -u ec2-user aws s3 cp "s3://${s3_frontend_bucket}/shop" "/home/ec2-user/fro
 
 # 다운로드 성공 여부 확인
 if [ $? -eq 0 ]; then
-  echo "Frontend Shop File Download success : /home/ec2-user/frontend"
+  echo "Frontend Shop File Download success : /home/ec2-user/frontend/shop"
 else
   echo "Frontend Shop File Download Fali!"
 fi
@@ -154,7 +154,7 @@ http {
   server {
     listen       80;
     listen       [::]:80;
-    server_name  clientApplication;
+    server_name  adminApplication;
 
     location / {
       root  /home/ec2-user/frontend/shop/dist;
@@ -186,6 +186,20 @@ http {
   }
 }
 EOT
+
+# backend deploy 파일 생성
+cat > /home/ec2-user/backend_deploy.sh <<EOL
+#!/bin/bash
+
+docker stop app-admin || true
+docker rm app-admin || true
+docker rmi yong7317/application-admin:latest || true
+docker pull yong7317/application-admin:latest
+docker-compose -f /home/ec2-user/backend/docker-compose.yml up -d
+EOL
+
+sudo chown ec2-user:ec2-user /home/ec2-user/backend_deploy.sh
+sudo chmod +x backend_deploy.sh
 
 # Nginx 상태 확인
 sudo systemctl status nginx
