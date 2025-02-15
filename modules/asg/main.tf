@@ -1,7 +1,7 @@
 resource "aws_launch_template" "ProdLaunchTemplate" {
   name_prefix            = "ProdAutoScalingGroup"
   image_id               = var.ami.id
-  instance_type          = "t2.micro"
+  instance_type          = "t3.large"
   key_name               = var.key_pair.key_name
   vpc_security_group_ids = [var.vpc_security_group.id]
 
