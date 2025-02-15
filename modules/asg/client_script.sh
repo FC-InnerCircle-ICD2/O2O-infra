@@ -86,17 +86,6 @@ services:
     networks:
       - o2o-network
 
-  app-admin:
-    container_name: app-admin
-    image: yong7317/application-admin:latest
-    ports:
-      - '8084:8082'
-    command: ["java", "-jar", "-Duser.timezone=Asia/Seoul", "/admin-app.jar", "--spring.profiles.active=prod"]
-    volumes:
-      - /home/ec2-user/backend/log:/var/log
-    networks:
-      - o2o-network
-
 networks:
   o2o-network:
     external: true
@@ -108,24 +97,7 @@ sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
 cd /home/ec2-user/backend
 docker-compose up -d
 
-# frontend 폴더 생성
-sudo -u ec2-user mkdir -p /home/ec2-user/frontend/shop
-
-echo "=== Frontend Shop File Download start to S3 ==="
-
-# AWS CLI를 사용하여 파일 다운로드
-sudo -u ec2-user aws s3 cp "s3://${s3_frontend_bucket}/shop" "/home/ec2-user/frontend/shop" --recursive
-
-# 다운로드 성공 여부 확인
-if [ $? -eq 0 ]; then
-  echo "Frontend Shop File Download success : /home/ec2-user/frontend"
-else
-  echo "Frontend Shop File Download Fali!"
-fi
-
-echo "=== Frontend Shop File Download Completed ==="
-
-# Docker Compose 파일 생성
+# Frontend Docker Compose 파일 생성
 cat <<EOT > /home/ec2-user/frontend/docker-compose.yml
 version: "3.8"
 
@@ -208,39 +180,6 @@ http {
     }
 
     include /etc/nginx/default.d/*.conf;
-
-    error_page 404 /404.html;
-    location = /404.html {
-    }
-
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-    }
-  }
-
-  server {
-    listen       8082;
-    server_name  adminApplication;
-
-    location / {
-      root  /home/ec2-user/frontend/shop/dist;
-      index index.html;
-      try_files \$uri /index.html;
-    }
-
-    location ~ ^/(api|swagger-ui|v3/api-docs) {
-      proxy_pass http://127.0.0.1:8084;
-      proxy_set_header Host              \$host;
-      proxy_set_header X-Real-IP         \$remote_addr;
-      proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
-
-      proxy_http_version 1.1;
-      proxy_set_header   Connection keep-alive;
-      proxy_buffering    off;
-
-      add_header Cache-Control no-cache;
-      add_header X-Accel-Buffering no;
-    }
 
     error_page 404 /404.html;
     location = /404.html {
