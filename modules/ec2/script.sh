@@ -125,7 +125,6 @@ networks:
 EOT
 
 sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
-sudo chown -R ec2-user:ec2-user /home/ec2-user/data
 
 # Docker Compose 실행
 cd /home/ec2-user/backend
