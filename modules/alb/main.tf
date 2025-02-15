@@ -18,7 +18,7 @@ resource "aws_lb" "alb" {
   load_balancer_type = "application"
   security_groups    = [var.vpc_security_group.id]
   subnets            = var.public_subnet_ids
-  count       = length(local.target_group_count)
+  count              = length(local.target_group_count)
 
   tags = {
     Name = "prod-alb-${count.index}"
@@ -30,7 +30,7 @@ resource "aws_lb_listener" "abl_listener" {
   load_balancer_arn = aws_lb.alb[count.index].arn
   port              = "80"
   protocol          = "HTTP"
-  count       = length(local.target_group_count)
+  count             = length(local.target_group_count)
 
   default_action {
     type             = "forward"

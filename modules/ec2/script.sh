@@ -130,4 +130,13 @@ sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
 cd /home/ec2-user/backend
 docker-compose up -d
 
+cat > /home/ec2-user/deploy.sh <<EOL
+#!/bin/bash
+
+docker-compose -f /home/ec2-user/backend/docker-compose.yml up -d
+EOL
+
+sudo chown ec2-user:ec2-user /home/ec2-user/deploy.sh
+sudo chmod +x deploy.sh
+
 echo "Setup completed successfully!"
