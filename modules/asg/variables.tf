@@ -19,9 +19,14 @@ variable "alb_target_group" {
   description = "Application Load Balencer Target Group"
 }
 
-variable "s3_frontend_shop_bucket" {
+variable "s3_backend_bucket" {
   type        = string
-  description = "frontend shop bucket"
+  description = "S3 backend bucket"
+}
+
+variable "s3_frontend_bucket" {
+  type        = string
+  description = "S3 frontend bucket"
 }
 
 variable "aws_access_key_id" {

@@ -30,18 +30,32 @@ docker network create o2o-network
 
 echo "Setup Docker Network!"
 
-# backend 폴더 생성
-sudo -u ec2-user mkdir -p /home/ec2-user/backend
+# .aws 디렉토리가 없으면 생성
+mkdir -p ~/.aws
 
-echo AWS_ACCESS_KEY_ID=${aws_access_key_id} >> /home/ec2-user/.bashrc
-echo AWS_SECRET_ACCESS_KEY=${aws_secret_access_key} >> /home/ec2-user/.bashrc
-echo AWS_DEFAULT_REGION=${aws_default_region} >> /home/ec2-user/.bashrc
-source ~/.bashrc
+# credentials 파일에 AWS 액세스 키와 비밀 키 설정
+cat > ~/.aws/credentials <<EOL
+[default]
+aws_access_key_id=${aws_access_key_id}
+aws_secret_access_key=${aws_secret_access_key}
+EOL
+
+# config 파일에 리전 설정
+cat > ~/.aws/config <<EOL
+[default]
+region=${aws_default_region}
+output=json
+EOL
+
+aws configure list
+
+# backend 폴더 및 flyway 폴더 생성
+sudo -u ec2-user mkdir -p /home/ec2-user/backend/flyway/migration
 
 echo "=== Config File Download start to S3 ==="
 
 # AWS CLI를 사용하여 파일 다운로드
-aws s3 cp "s3://${s3_flyway_bucket}/" "/home/ec2-user/backend" --recursive
+sudo -u ec2-user aws s3 cp "s3://${s3_backend_bucket}/flyway" "/home/ec2-user/backend/flyway" --recursive
 
 # 다운로드 성공 여부 확인
 if [ $? -eq 0 ]; then
@@ -53,7 +67,7 @@ fi
 echo "=== Config File Download Completed ==="
 
 # Docker Compose 파일 생성
-sudo -u ec2-user cat <<EOT > /home/ec2-user/backend/docker-compose.yml
+sudo -u ec2-user tee <<EOT > /home/ec2-user/backend/docker-compose.yml
 version: "3.8"
 
 services:

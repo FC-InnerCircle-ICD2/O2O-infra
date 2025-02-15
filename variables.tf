@@ -8,9 +8,9 @@ variable "postgres_password" {
   description = "postgres_password"
 }
 
-variable "s3_flyway_bucket" {
+variable "s3_backend_bucket" {
   type        = string
-  description = "S3 flyway bucket"
+  description = "S3 backend bucket"
 }
 
 variable "aws_access_key_id" {
@@ -25,7 +25,7 @@ variable "aws_default_region" {
   description = "aws default region"
 }
 
-variable "s3_frontend_shop_bucket" {
+variable "s3_frontend_bucket" {
   type        = string
-  description = "frontend shop bucket"
+  description = "S3 frontend bucket"
 }

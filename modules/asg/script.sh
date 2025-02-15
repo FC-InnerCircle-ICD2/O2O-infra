@@ -140,13 +140,44 @@ docker network create o2o-network
 
 echo "Setup Docker Network!"
 
+# .aws 디렉토리가 없으면 생성
+sudo -u mkdir -p ~/.aws
+
+# credentials 파일에 AWS 액세스 키와 비밀 키 설정
+cat > ~/.aws/credentials <<EOL
+[default]
+aws_access_key_id=${aws_access_key_id}
+aws_secret_access_key=${aws_secret_access_key}
+EOL
+
+# config 파일에 리전 설정
+cat > ~/.aws/config <<EOL
+[default]
+region=${aws_default_region}
+output=json
+EOL
+
+aws configure list
+
 # backend 폴더 생성
 sudo -u ec2-user mkdir -p /home/ec2-user/backend
 
-echo "=== Config File Download Completed ==="
+echo "=== Backend .env File Download start to S3 ==="
+
+# AWS CLI를 사용하여 파일 다운로드
+sudo -u ec2-user aws s3 cp "s3://${s3_backend_bucket}/.env" "/home/ec2-user/backend"
+
+# 다운로드 성공 여부 확인
+if [ $? -eq 0 ]; then
+  echo "Backend .env File Download success : /home/ec2-user/backend"
+else
+  echo "Backend .env File Download Fali!"
+fi
+
+echo "=== Backend .env File Download Completed ==="
 
 # Docker Compose 파일 생성
-sudo -u ec2-user cat <<EOT > /home/ec2-user/backend/docker-compose.yml
+sudo -u ec2-user tee <<EOT > /home/ec2-user/backend/docker-compose.yml
 version: "3.8"
 
 services:
@@ -157,6 +188,7 @@ services:
       - .env
     ports:
       - '8083:8081'
+    command: ["java", "-jar", "-Duser.timezone=Asia/Seoul", "/client-app.jar", "--spring.profiles.active=prod"]
     volumes:
       - /home/ec2-user/backend/log:/var/log
     networks:
@@ -167,6 +199,7 @@ services:
     image: yong7317/application-admin:latest
     ports:
       - '8084:8082'
+    command: ["java", "-jar", "-Duser.timezone=Asia/Seoul", "/admin-app.jar", "--spring.profiles.active=prod"]
     volumes:
       - /home/ec2-user/backend/log:/var/log
     networks:
@@ -184,28 +217,22 @@ docker-compose up -d
 # frontend 폴더 생성
 sudo -u ec2-user mkdir -p /home/ec2-user/frontend/shop
 
-# AWS CLI를 사용하여 파일 다운로드
-echo AWS_ACCESS_KEY_ID=${aws_access_key_id} >> /home/ec2-user/.bashrc
-echo AWS_SECRET_ACCESS_KEY=${aws_secret_access_key} >> /home/ec2-user/.bashrc
-echo AWS_DEFAULT_REGION=${aws_default_region} >> /home/ec2-user/.bashrc
-source ~/.bashrc
-
-echo "=== Config File Download start to S3 ==="
+echo "=== Frontend Shop File Download start to S3 ==="
 
 # AWS CLI를 사용하여 파일 다운로드
-aws s3 cp "s3://${s3_frontend_shop_bucket}" "/home/ec2-user/frontend/shop" --recursive
+sudo -u ec2-user aws s3 cp "s3://${s3_frontend_bucket}/shop" "/home/ec2-user/frontend/shop" --recursive
 
 # 다운로드 성공 여부 확인
 if [ $? -eq 0 ]; then
-  echo "Flyway Config File Download success : /home/ec2-user/frontend"
+  echo "Frontend Shop File Download success : /home/ec2-user/frontend"
 else
-  echo "Flyway Config File Download Fali!"
+  echo "Frontend Shop File Download Fali!"
 fi
 
-echo "=== Config File Download Completed ==="
+echo "=== Frontend Shop File Download Completed ==="
 
 # Docker Compose 파일 생성
-sudo -u ec2-user cat <<EOT > /home/ec2-user/frontend/docker-compose.yml
+sudo -u ec2-user tee <<EOT > /home/ec2-user/frontend/docker-compose.yml
 version: "3.8"
 
 services:
