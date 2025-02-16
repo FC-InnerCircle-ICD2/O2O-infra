@@ -40,3 +40,7 @@ variable "aws_secret_access_key" {
 variable "aws_default_region" {
   description = "aws default region"
 }
+
+variable "ec2_ssm_instance_profile" {
+  description = "ec2 ssm profile"
+}

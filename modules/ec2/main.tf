@@ -55,6 +55,8 @@ resource "aws_instance" "db" {
   vpc_security_group_ids = [var.vpc_security_group.id]
   private_ip             = "10.0.4.100"
 
+  iam_instance_profile = var.ec2_ssm_instance_profile.name
+
   user_data = data.template_file.db_instance_user_data.rendered
 
   tags = {

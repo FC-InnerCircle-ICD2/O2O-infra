@@ -5,6 +5,10 @@ resource "aws_launch_template" "ProdClientLaunchTemplate" {
   key_name               = var.key_pair.key_name
   vpc_security_group_ids = [var.vpc_security_group.id]
 
+  iam_instance_profile {
+    name = var.ec2_ssm_instance_profile.name
+  }
+
   user_data = base64encode(templatefile("${path.module}/client_script.sh", {
     aws_access_key_id     = var.aws_access_key_id
     aws_secret_access_key = var.aws_secret_access_key
@@ -24,7 +28,7 @@ resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
   desired_capacity    = 1
   max_size            = 2
   min_size            = 1
-  vpc_zone_identifier = [var.private_subnet_ids[0]]
+  vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[2]]
 
   launch_template {
     id      = aws_launch_template.ProdClientLaunchTemplate.id
@@ -56,6 +60,10 @@ resource "aws_launch_template" "ProdAdminLaunchTemplate" {
   key_name               = var.key_pair.key_name
   vpc_security_group_ids = [var.vpc_security_group.id]
 
+  iam_instance_profile {
+    name = var.ec2_ssm_instance_profile.name
+  }
+
   user_data = base64encode(templatefile("${path.module}/admin_script.sh", {
     aws_access_key_id     = var.aws_access_key_id
     aws_secret_access_key = var.aws_secret_access_key
@@ -75,7 +83,7 @@ resource "aws_autoscaling_group" "ProdAdminAutoScalingGroup" {
   desired_capacity    = 1
   max_size            = 2
   min_size            = 1
-  vpc_zone_identifier = [var.private_subnet_ids[2]]
+  vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[2]]
 
   launch_template {
     id      = aws_launch_template.ProdAdminLaunchTemplate.id
