@@ -10,3 +10,7 @@ variable "public_subnet_ids" {
   type        = list(string)
   description = "VPC Public Subnet Ids"
 }
+
+variable "acm_certificate" {
+  description = "The ACM certificate"
+}

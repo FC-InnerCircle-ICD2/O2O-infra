@@ -2,13 +2,18 @@ module "vpc" {
   source = "./modules/vpc"
 }
 
+module "acm" {
+  source = "./modules/acm"
+}
+
 module "alb" {
   source             = "./modules/alb"
   vpc_resource       = module.vpc.vpc_resource
   vpc_security_group = module.vpc.security_group
   public_subnet_ids  = module.vpc.public_subnet_ids
+  acm_certificate    = module.acm.acm_certificate
 
-  depends_on = [module.vpc]
+  depends_on = [module.vpc, module.acm]
 }
 
 module "route53" {

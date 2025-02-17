@@ -31,13 +31,35 @@ resource "aws_lb_listener" "abl_listener" {
   protocol          = "HTTP"
 
   default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+      host        = "#{host}"
+      path        = "/#{path}"
+      query       = "#{query}"
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  depends_on        = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1]]
+  load_balancer_arn = aws_lb.alb.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.acm_certificate.arn
+
+  default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.alb_target_group[0].arn
   }
 }
 
 resource "aws_lb_listener_rule" "root" {
-  listener_arn = aws_lb_listener.abl_listener.arn
+  listener_arn = aws_lb_listener.https.arn
   priority     = 2
 
   action {
@@ -53,7 +75,7 @@ resource "aws_lb_listener_rule" "root" {
 }
 
 resource "aws_lb_listener_rule" "sub" {
-  listener_arn = aws_lb_listener.abl_listener.arn
+  listener_arn = aws_lb_listener.https.arn
   priority     = 1
 
   action {
