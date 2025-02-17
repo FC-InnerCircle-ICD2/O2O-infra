@@ -27,12 +27,43 @@ resource "aws_lb" "alb" {
 resource "aws_lb_listener" "abl_listener" {
   depends_on        = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1]]
   load_balancer_arn = aws_lb.alb.arn
-  port              = local.ports[count.index]
+  port              = "80"
   protocol          = "HTTP"
-  count             = length(local.ports)
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.alb_target_group[count.index].arn
+    target_group_arn = aws_lb_target_group.alb_target_group[0].arn
+  }
+}
+
+resource "aws_lb_listener_rule" "root" {
+  listener_arn = aws_lb_listener.abl_listener.arn
+  priority     = 2
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.alb_target_group[0].arn
+  }
+
+  condition {
+    host_header {
+      values = ["gaebalmin.com"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "sub" {
+  listener_arn = aws_lb_listener.abl_listener.arn
+  priority     = 1
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.alb_target_group[1].arn
+  }
+
+  condition {
+    host_header {
+      values = ["ceo.gaebalmin.com"]
+    }
   }
 }

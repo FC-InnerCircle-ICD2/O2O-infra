@@ -11,10 +11,17 @@ module "alb" {
   depends_on = [module.vpc]
 }
 
+module "route53" {
+  source = "./modules/route53"
+  alb    = module.alb.alb
+
+  depends_on = [module.alb]
+}
+
 module "iam" {
   source = "./modules/iam"
 
-  depends_on = [module.alb]
+  depends_on = [module.route53]
 }
 
 module "ec2" {

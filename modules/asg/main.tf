@@ -25,9 +25,9 @@ resource "aws_launch_template" "ProdClientLaunchTemplate" {
 resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
   depends_on          = [aws_launch_template.ProdClientLaunchTemplate]
   name                = "ProdClientAutoScalingGroup"
-  desired_capacity    = 1
-  max_size            = 2
-  min_size            = 1
+  desired_capacity    = 2
+  max_size            = 4
+  min_size            = 2
   vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[2]]
 
   launch_template {
@@ -80,9 +80,9 @@ resource "aws_launch_template" "ProdAdminLaunchTemplate" {
 resource "aws_autoscaling_group" "ProdAdminAutoScalingGroup" {
   depends_on          = [aws_launch_template.ProdAdminLaunchTemplate]
   name                = "ProdAdminAutoScalingGroup"
-  desired_capacity    = 1
-  max_size            = 2
-  min_size            = 1
+  desired_capacity    = 2
+  max_size            = 4
+  min_size            = 2
   vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[2]]
 
   launch_template {
