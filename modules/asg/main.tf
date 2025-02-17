@@ -6,7 +6,7 @@ resource "aws_launch_template" "ProdClientLaunchTemplate" {
   vpc_security_group_ids = [var.vpc_security_group.id]
 
   iam_instance_profile {
-    name = var.ec2_ssm_instance_profile.name
+    name = var.ec2_instance_profile.name
   }
 
   user_data = base64encode(templatefile("${path.module}/client_script.sh", {
@@ -61,7 +61,7 @@ resource "aws_launch_template" "ProdAdminLaunchTemplate" {
   vpc_security_group_ids = [var.vpc_security_group.id]
 
   iam_instance_profile {
-    name = var.ec2_ssm_instance_profile.name
+    name = var.ec2_instance_profile.name
   }
 
   user_data = base64encode(templatefile("${path.module}/admin_script.sh", {

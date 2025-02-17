@@ -48,14 +48,14 @@ data "template_file" "db_instance_user_data" {
 # Database를 모아둔 EC2 인스턴스를 생성합니다.
 resource "aws_instance" "db" {
   ami                    = var.ami.id
-  instance_type          = "t2.micro"
+  instance_type          = "t3.large"
   key_name               = var.key_pair.key_name
   availability_zone      = var.availability_zones[0]
   subnet_id              = var.private_subnet_ids[1]
   vpc_security_group_ids = [var.vpc_security_group.id]
   private_ip             = "10.0.4.100"
 
-  iam_instance_profile = var.ec2_ssm_instance_profile.name
+  iam_instance_profile = var.ec2_instance_profile.name
 
   user_data = data.template_file.db_instance_user_data.rendered
 
