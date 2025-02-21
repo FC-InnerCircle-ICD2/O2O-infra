@@ -109,6 +109,19 @@ services:
     networks:
       - o2o-network
 
+  app-oss:
+    container_name: app-oss
+    image: yong7317/application-oss:latest
+    ports:
+      - '8085:8085'
+    command: ["java", "-jar", "-Duser.timezone=Asia/Seoul", "/oss-app.jar", "--spring.profiles.active=prod"]
+    volumes:
+      - /home/ec2-user/backend/log:/var/log
+    networks:
+      - o2o-network
+    depends_on:
+      - order-postgres
+
   migrate-postgres:
     image: flyway/flyway:7
     container_name: migrate-postgres
@@ -137,6 +150,10 @@ docker-compose up -d
 cat > /home/ec2-user/deploy.sh <<EOL
 #!/bin/bash
 
+docker stop app-oss || true
+docker rm app-oss || true
+docker rmi yong7317/application-oss:latest || true
+docker pull yong7317/application-oss:latest
 docker-compose -f /home/ec2-user/backend/docker-compose.yml up -d
 EOL
 
