@@ -180,6 +180,23 @@ http {
       add_header X-Accel-Buffering no;
     }
 
+    location = /api/v1/event-stream {
+      proxy_pass http://127.0.0.1:8084;
+      proxy_set_header Host              \$host;
+      proxy_set_header X-Real-IP         \$remote_addr;
+      proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+
+      # SSE 관련 설정
+      proxy_http_version 1.1;
+      proxy_set_header   Connection '';
+      proxy_set_header   Cache-Control 'no-cache';
+      proxy_set_header   X-Accel-Buffering 'no';
+      proxy_set_header   Content-Type 'text/event-stream';
+      proxy_buffering    off;
+      proxy_read_timeout 100s;
+      chunked_transfer_encoding on;
+    }
+
     error_page 404 /404.html;
     location = /404.html {
     }

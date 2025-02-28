@@ -136,6 +136,70 @@ services:
     networks:
       - o2o-network
 
+  prometheus:
+    image: prom/prometheus:v2.53.3
+    container_name: prometheus
+    volumes:
+      - /home/ec2-user/backend/prometheus/prometheus-prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.listen-address=:9090'
+    restart: unless-stopped
+    networks:
+      - o2o-network
+
+  grafana:
+    image: grafana/grafana-oss:11.5.1
+    container_name: grafana
+    volumes:
+      - /home/ec2-user/backend/grafana/config:/etc/grafana
+      - grafana_data:/var/lib/grafana
+      - /home/ec2-user/backend/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${gf_security_admin_user}
+      - GF_SECURITY_ADMIN_PASSWORD=${gf_security_admin_password}
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+    networks:
+      - o2o-network
+
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    networks:
+      - o2o-network
+
+  promtail:
+    image: grafana/promtail:2.8.0
+    container_name: promtail
+    volumes:
+      - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+    networks:
+      - o2o-network
+
 networks:
   o2o-network:
     external: true
@@ -143,10 +207,7 @@ EOT
 
 sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
 
-# Docker Compose 실행
-cd /home/ec2-user/backend
-docker-compose up -d
-
+# 배포 스크립트 파일 생성
 cat > /home/ec2-user/deploy.sh <<EOL
 #!/bin/bash
 
@@ -159,5 +220,32 @@ EOL
 
 sudo chown ec2-user:ec2-user /home/ec2-user/deploy.sh
 sudo chmod +x deploy.sh
+
+# ================================================ monitoring 셋팅 ========================================================================
+
+# prometheus 스크립트 파일 생성
+cat > /home/ec2-user/prometheus_files.sh <<EOL
+#!/bin/bash
+
+ASG_NAME="ProdClientAutoScalingGroup"
+TARGET_FILE="/home/ec2-user/instance_ip.json"
+
+# Get instance IPs from ASG
+INSTANCE_IPS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names $ASG_NAME --query "AutoScalingGroups[].Instances[].InstanceId" --output text | xargs -n1 aws ec2 describe-instances --instance-ids | jq -r '.Reservations[].Instances[].PrivateIpAddress')
+
+# Generate JSON for Prometheus
+echo '[' > $TARGET_FILE
+for IP in $INSTANCE_IPS; do
+  echo "  { \"targets\": [\"$IP:8089\"] }," >> $TARGET_FILE
+done
+echo ']' >> $TARGET_FILE
+EOL
+
+sudo chown ec2-user:ec2-user /home/ec2-user/prometheus_files.sh
+sudo chmod +x prometheus_files.sh
+
+# Docker Compose 실행
+cd /home/ec2-user/backend
+docker-compose up -d
 
 echo "Setup completed successfully!"
