@@ -58,3 +58,15 @@ variable "aws_default_region" {
 variable "ec2_instance_profile" {
   description = "ec2 profile"
 }
+
+variable "gf_security_admin_user" {
+  description = "gf security admin user"
+}
+
+variable "gf_security_admin_password" {
+  description = "gf security admin password"
+}
+
+variable "grafana_root_url" {
+  description = "grafana root url"
+}

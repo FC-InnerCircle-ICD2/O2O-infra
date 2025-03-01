@@ -29,3 +29,18 @@ variable "s3_frontend_bucket" {
   type        = string
   description = "S3 frontend bucket"
 }
+
+variable "gf_security_admin_user" {
+  type        = string
+  description = "gf security admin user"
+}
+
+variable "gf_security_admin_password" {
+  type        = string
+  description = "gf security admin password"
+}
+
+variable "grafana_root_url" {
+  type        = string
+  description = "grafana root url"
+}

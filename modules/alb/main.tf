@@ -1,5 +1,5 @@
 locals {
-  ports = ["80", "8082"]
+  ports = ["80", "8082", "8089"]
 }
 
 resource "aws_lb_target_group" "alb_target_group" {
@@ -12,7 +12,7 @@ resource "aws_lb_target_group" "alb_target_group" {
 }
 
 resource "aws_lb" "alb" {
-  depends_on         = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1]]
+  depends_on         = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1], aws_lb_target_group.alb_target_group[2]]
   name               = "prod-alb"
   internal           = false
   load_balancer_type = "application"
@@ -25,7 +25,7 @@ resource "aws_lb" "alb" {
 }
 
 resource "aws_lb_listener" "abl_listener" {
-  depends_on        = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1]]
+  depends_on        = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1], aws_lb_target_group.alb_target_group[2]]
   load_balancer_arn = aws_lb.alb.arn
   port              = "80"
   protocol          = "HTTP"
@@ -45,7 +45,7 @@ resource "aws_lb_listener" "abl_listener" {
 }
 
 resource "aws_lb_listener" "https" {
-  depends_on        = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1]]
+  depends_on        = [aws_lb_target_group.alb_target_group[0], aws_lb_target_group.alb_target_group[1], aws_lb_target_group.alb_target_group[2]]
   load_balancer_arn = aws_lb.alb.arn
   port              = "443"
   protocol          = "HTTPS"
@@ -86,6 +86,22 @@ resource "aws_lb_listener_rule" "sub" {
   condition {
     host_header {
       values = ["ceo.gaebalmin.com"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "monitor_sub" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 1
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.alb_target_group[2].arn
+  }
+
+  condition {
+    host_header {
+      values = ["monitor.gaebalmin.com"]
     }
   }
 }
