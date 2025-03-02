@@ -104,6 +104,14 @@ http {
       proxy_set_header X-Forwarded-Proto  \$scheme;
     }
 
+    location /loki {
+      proxy_pass http://127.0.0.1:3100;
+      proxy_set_header Host               \$host;
+      proxy_set_header X-Real-IP          \$remote_addr;
+      proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto  \$scheme;
+    }
+
     # Load configuration files for the default server block.
     include /etc/nginx/default.d/*.conf;
 
@@ -187,20 +195,6 @@ services:
     networks:
       - o2o-network
 
-  promtail:
-    image: grafana/promtail:2.8.0
-    container_name: promtail
-    volumes:
-      - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
-      - /var/log:/var/log
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
-    restart: unless-stopped
-    networks:
-      - o2o-network
-
 volumes:
   prometheus_data:
   grafana_data:
@@ -273,6 +267,6 @@ sudo -u ec2-user mkdir -p /home/ec2-user/backend/grafana/config
 
 cat > /home/ec2-user/backend/grafana/config/grafana.ini <<EOL
 [server]
-root_url = ${grafana_root_url}
+root_url = http://${grafana_root_url}
 serve_from_sub_path = true
 EOL

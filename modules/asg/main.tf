@@ -15,6 +15,7 @@ resource "aws_launch_template" "ProdClientLaunchTemplate" {
     aws_default_region    = var.aws_default_region
     s3_backend_bucket     = var.s3_backend_bucket
     s3_frontend_bucket    = var.s3_frontend_bucket
+    grafana_root_url      = var.grafana_root_url
   }))
 
   lifecycle {

@@ -44,3 +44,8 @@ variable "aws_default_region" {
 variable "ec2_instance_profile" {
   description = "ec2 profile"
 }
+
+variable "grafana_root_url" {
+  type        = string
+  description = "grafana root url"
+}
