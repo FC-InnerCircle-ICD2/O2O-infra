@@ -60,7 +60,7 @@ resource "aws_lb_listener" "https" {
 
 resource "aws_lb_listener_rule" "root" {
   listener_arn = aws_lb_listener.https.arn
-  priority     = 2
+  priority     = 3
 
   action {
     type             = "forward"
@@ -92,7 +92,7 @@ resource "aws_lb_listener_rule" "sub" {
 
 resource "aws_lb_listener_rule" "monitor_sub" {
   listener_arn = aws_lb_listener.https.arn
-  priority     = 1
+  priority     = 2
 
   action {
     type             = "forward"

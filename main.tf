@@ -1,5 +1,5 @@
 module "vpc" {
-  source = "./modules/vpc"
+  source           = "./modules/vpc"
   grafana_root_url = var.grafana_root_url
 }
 
