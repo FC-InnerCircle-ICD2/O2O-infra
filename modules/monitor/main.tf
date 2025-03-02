@@ -6,6 +6,7 @@ data "template_file" "monitor_instance_user_data" {
     aws_access_key_id          = var.aws_access_key_id
     aws_secret_access_key      = var.aws_secret_access_key
     aws_default_region         = var.aws_default_region
+    s3_backend_bucket          = var.s3_backend_bucket
     gf_security_admin_user     = var.gf_security_admin_user
     gf_security_admin_password = var.gf_security_admin_password
     grafana_root_url           = var.grafana_root_url
@@ -29,4 +30,10 @@ resource "aws_instance" "monitor" {
   tags = {
     Name = "prod-monitor-instance"
   }
+}
+
+resource "aws_lb_target_group_attachment" "ProdMonitorALBattachment" {
+  target_group_arn = var.alb_target_group[2].arn
+  target_id        = aws_instance.monitor.id
+  port             = 80
 }

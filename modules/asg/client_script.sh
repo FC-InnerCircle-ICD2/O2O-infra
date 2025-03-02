@@ -94,7 +94,7 @@ services:
     image: grafana/promtail:2.8.0
     container_name: promtail
     environment:
-      - HOSTNAME=${HOSTNAME}
+      - HOSTNAME=$${HOSTNAME}
     volumes:
       - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
       - /home/ec2-user/backend/log/application-client.log:/var/log/application-client.log
@@ -134,7 +134,7 @@ scrape_configs:
           - localhost
         labels:
           job: app-client
-          host: \${HOSTNAME}
+          host: $${HOSTNAME}
           __path__: /var/log/*.log
 EOT
 

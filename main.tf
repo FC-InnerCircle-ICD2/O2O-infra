@@ -1,6 +1,5 @@
 module "vpc" {
-  source           = "./modules/vpc"
-  grafana_root_url = var.grafana_root_url
+  source = "./modules/vpc"
 }
 
 module "acm" {
@@ -66,4 +65,24 @@ module "asg" {
   grafana_root_url      = var.grafana_root_url
 
   depends_on = [module.ec2]
+}
+
+module "monitor" {
+  source                     = "./modules/monitor"
+  key_pair                   = module.vpc.key_pair
+  ami                        = module.vpc.ami
+  vpc_security_group         = module.vpc.security_group
+  availability_zones         = module.vpc.availability_zones
+  private_subnet_ids         = module.vpc.private_subnet_ids
+  alb_target_group           = module.alb.alb_target_group
+  s3_backend_bucket          = var.s3_backend_bucket
+  aws_access_key_id          = var.aws_access_key_id
+  aws_secret_access_key      = var.aws_secret_access_key
+  aws_default_region         = var.aws_default_region
+  ec2_instance_profile       = module.iam.ec2_instance_profile
+  gf_security_admin_user     = var.gf_security_admin_user
+  gf_security_admin_password = var.gf_security_admin_password
+  grafana_root_url           = var.grafana_root_url
+
+  depends_on = [module.asg]
 }
