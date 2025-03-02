@@ -1,3 +1,33 @@
+variable "vpc_resource" {
+  description = "VPC"
+}
+
+variable "key_pair" {
+  description = "AWS key pair"
+}
+
+variable "ami" {
+  description = "AWS AMI"
+}
+
+variable "vpc_security_group" {
+  description = "VPC Security Group"
+}
+
+variable "availability_zones" {
+  description = "Availability Zones"
+}
+
+variable "public_subnet_ids" {
+  type        = list(string)
+  description = "VPC Public Subnet Ids"
+}
+
+variable "private_subnet_ids" {
+  type        = list(string)
+  description = "VPC Public Subnet Ids"
+}
+
 variable "postgres_user" {
   type        = string
   description = "postgres user"
@@ -25,22 +55,18 @@ variable "aws_default_region" {
   description = "aws default region"
 }
 
-variable "s3_frontend_bucket" {
-  type        = string
-  description = "S3 frontend bucket"
+variable "ec2_instance_profile" {
+  description = "ec2 profile"
 }
 
 variable "gf_security_admin_user" {
-  type        = string
   description = "gf security admin user"
 }
 
 variable "gf_security_admin_password" {
-  type        = string
   description = "gf security admin password"
 }
 
 variable "grafana_root_url" {
-  type        = string
   description = "grafana root url"
 }
