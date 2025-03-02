@@ -15,6 +15,7 @@ resource "aws_launch_template" "ProdClientLaunchTemplate" {
     aws_default_region    = var.aws_default_region
     s3_backend_bucket     = var.s3_backend_bucket
     s3_frontend_bucket    = var.s3_frontend_bucket
+    grafana_root_url      = var.grafana_root_url
   }))
 
   lifecycle {
@@ -25,9 +26,9 @@ resource "aws_launch_template" "ProdClientLaunchTemplate" {
 resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
   depends_on          = [aws_launch_template.ProdClientLaunchTemplate]
   name                = "ProdClientAutoScalingGroup"
-  desired_capacity    = 1
-  max_size            = 2
-  min_size            = 1
+  desired_capacity    = 2
+  max_size            = 4
+  min_size            = 2
   vpc_zone_identifier = [var.private_subnet_ids[0], var.private_subnet_ids[2]]
 
   launch_template {

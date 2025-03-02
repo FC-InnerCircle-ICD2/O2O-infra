@@ -1,7 +1,3 @@
-variable "vpc_resource" {
-  description = "VPC"
-}
-
 variable "key_pair" {
   description = "AWS key pair"
 }
@@ -18,24 +14,13 @@ variable "availability_zones" {
   description = "Availability Zones"
 }
 
-variable "public_subnet_ids" {
-  type        = list(string)
-  description = "VPC Public Subnet Ids"
-}
-
 variable "private_subnet_ids" {
   type        = list(string)
   description = "VPC Public Subnet Ids"
 }
 
-variable "postgres_user" {
-  type        = string
-  description = "postgres user"
-}
-
-variable "postgres_password" {
-  type        = string
-  description = "postgres_password"
+variable "alb_target_group" {
+  description = "Application Load Balencer Target Group"
 }
 
 variable "s3_backend_bucket" {

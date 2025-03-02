@@ -90,12 +90,55 @@ services:
     networks:
       - o2o-network
 
+  promtail:
+    image: grafana/promtail:2.8.0
+    container_name: promtail
+    environment:
+      - HOSTNAME=$${HOSTNAME}
+    volumes:
+      - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
+      - /home/ec2-user/backend/log/application-client.log:/var/log/application-client.log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+      - "-config.expand-env=true"
+    restart: unless-stopped
+    networks:
+      - o2o-network
+
 networks:
   o2o-network:
     external: true
 EOT
 
 sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
+
+# promtail 폴더 생성
+sudo -u ec2-user mkdir -p /home/ec2-user/backend/promtail
+
+# promtail config 파일 생성
+cat <<EOT > /home/ec2-user/backend/promtail/config.yml
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://${grafana_root_url}/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: app-client
+          host: $${HOSTNAME}
+          __path__: /var/log/*.log
+EOT
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/config.yml
 
 # Backend Docker Compose 실행
 cd /home/ec2-user/backend
@@ -180,6 +223,29 @@ http {
     }
 
     location ~ ^/(api|swagger-ui|v3/api-docs) {
+      proxy_pass http://127.0.0.1:8083;
+      proxy_set_header Host              \$host;
+      proxy_set_header X-Real-IP         \$remote_addr;
+      proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+    }
+
+    include /etc/nginx/default.d/*.conf;
+
+    error_page 404 /404.html;
+    location = /404.html {
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+    }
+  }
+
+  # grafana monitoring port
+  server {
+    listen       8089;
+    server_name  clientApplication;
+
+    location / {
       proxy_pass http://127.0.0.1:8083;
       proxy_set_header Host              \$host;
       proxy_set_header X-Real-IP         \$remote_addr;

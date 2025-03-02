@@ -104,6 +104,14 @@ http {
       proxy_set_header X-Forwarded-Proto  \$scheme;
     }
 
+    location /loki {
+      proxy_pass http://127.0.0.1:3100;
+      proxy_set_header Host               \$host;
+      proxy_set_header X-Real-IP          \$remote_addr;
+      proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto  \$scheme;
+    }
+
     # Load configuration files for the default server block.
     include /etc/nginx/default.d/*.conf;
 
@@ -187,20 +195,6 @@ services:
     networks:
       - o2o-network
 
-  promtail:
-    image: grafana/promtail:2.8.0
-    container_name: promtail
-    volumes:
-      - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
-      - /var/log:/var/log
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
-    restart: unless-stopped
-    networks:
-      - o2o-network
-
 volumes:
   prometheus_data:
   grafana_data:
@@ -217,33 +211,35 @@ sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/docker-compose.yml
 cat > /home/ec2-user/prometheus_files.sh <<EOL
 #!/bin/bash
 
-ASG_NAME="ProdClientAutoScalingGroup"
 TARGET_FILE="/home/ec2-user/instance_ip.json"
 
-# Get instance IPs from ASG
-INSTANCE_IPS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names \$ASG_NAME --query "AutoScalingGroups[].Instances[].InstanceId" --output text | xargs -n1 aws ec2 describe-instances --instance-ids | jq -r '.Reservations[].Instances[].PrivateIpAddress')
+# Get instance IPs from ASG and convert them into a Bash array
+INSTANCE_IPS=(\$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ProdClientAutoScalingGroup --query "AutoScalingGroups[].Instances[].InstanceId" --output text 
+| xargs -n1 aws ec2 describe-instances --instance-ids | jq -r '.Reservations[].Instances[].PrivateIpAddress'))
 
-LENGTH=${#\INSTANCE_IPS[@]}
+LENGTH=\${#INSTANCE_IPS[@]}
 
 INDEX=0
 
 # Generate JSON for Prometheus
 echo '[' > \$TARGET_FILE
-for IP in "${\INSTANCE_IPS[@]}"; do
+for IP in "\${INSTANCE_IPS[@]}"; do
   # Check if it is the last element
-  if [ \$INDEX -eq $((LENGTH - 1)) ]; then
-    echo "  { \"targets\": [\"\$IP:8089\"] }" >> \$TARGET_FILE
+  if [ \$INDEX -eq \$((LENGTH - 1)) ]; then
+    echo "{ \"targets\": [\"\$IP:8089\"] }" >> \$TARGET_FILE
   else
-    echo "  { \"targets\": [\"\$IP:8089\"] }," >> \$TARGET_FILE
+    echo "{ \"targets\": [\"\$IP:8089\"] }," >> \$TARGET_FILE
   fi
   # Increment the index
-  INDEX=$((INDEX + 1))
+  INDEX=\$((INDEX + 1))
 done
 echo ']' >> \$TARGET_FILE
 EOL
 
 sudo chown ec2-user:ec2-user /home/ec2-user/prometheus_files.sh
 sudo chmod +x prometheus_files.sh
+
+/home/ec2-user/prometheus_files.sh
 
 # =================================== prometheus 설정 파일 생성 ============================================================
 sudo -u ec2-user mkdir -p /home/ec2-user/backend/prometheus
@@ -273,6 +269,31 @@ sudo -u ec2-user mkdir -p /home/ec2-user/backend/grafana/config
 
 cat > /home/ec2-user/backend/grafana/config/grafana.ini <<EOL
 [server]
-root_url = ${grafana_root_url}
+root_url = http://${grafana_root_url}
 serve_from_sub_path = true
 EOL
+
+sudo chown ec2-user:ec2-user /home/ec2-user/backend/grafana/config/grafana.ini
+
+# =================================== grafana 프로비저닝 파일 생성 ============================================================
+sudo -u ec2-user mkdir -p /home/ec2-user/backend/grafana/provisioning
+
+echo "=== Provisioning Directory Download start ==="
+
+# AWS CLI를 사용하여 파일 다운로드
+sudo -u ec2-user aws s3 cp "s3://${s3_backend_bucket}/grafana/provisioning" "/home/ec2-user/backend/grafana/provisioning" --recursive
+
+# 다운로드 성공 여부 확인
+if [ $? -eq 0 ]; then
+  echo "Provisioning Directory Download success : /home/ec2-user/backend"
+else
+  echo "Provisioning Directory Download Fali!"
+fi
+
+echo "=== Provisioning Directory Download Completed ==="
+
+# =================================== Docker Compose 실행 ============================================================
+cd /home/ec2-user/backend
+docker-compose up -d
+
+echo "Setup completed successfully!"
