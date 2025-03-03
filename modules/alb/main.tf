@@ -9,6 +9,16 @@ resource "aws_lb_target_group" "alb_target_group" {
   protocol    = "HTTP"
   vpc_id      = var.vpc_resource.id
   count       = length(local.ports)
+
+  health_check {
+    interval            = 30
+    path = count.index == length(local.ports) - 1 ? "/login" : "/"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+  }
 }
 
 resource "aws_lb" "alb" {
