@@ -47,6 +47,22 @@ resource "aws_autoscaling_group" "ProdClientAutoScalingGroup" {
   }
 }
 
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "scale-up-policy"
+  scaling_adjustment     = 1                  # 스케일링 정책이 트리거될 때 조정할 인스턴스 수를 지정
+  adjustment_type        = "ChangeInCapacity" # 스케일링 조정의 유형을 지정 (ChangeInCapacity: 현재 인스턴스 수를 기준으로 지정된 수만큼 증가 또는 감소, ExactCapacity, PercentChangeInCapacity)
+  cooldown               = 300                # 스케일링 활동 후 다음 스케일링 활동을 시작하기 전까지 대기할 시간(초)을 지정
+  autoscaling_group_name = aws_autoscaling_group.ProdClientAutoScalingGroup.name
+}
+
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "scale-down-policy"
+  scaling_adjustment     = -1 # 음수 값을 지정하면 인스턴스 수를 감소(예: -1).
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = aws_autoscaling_group.ProdClientAutoScalingGroup.name
+}
+
 resource "aws_autoscaling_attachment" "ProdClientAutoScalingALBattachment" {
   autoscaling_group_name = aws_autoscaling_group.ProdClientAutoScalingGroup.id
   lb_target_group_arn    = var.alb_target_group[0].arn

@@ -86,3 +86,12 @@ module "monitor" {
 
   depends_on = [module.asg]
 }
+
+module "cloudwatch" {
+  source                            = "./modules/cloudwatch"
+  aws_autoscaling_group_client      = module.asg.aws_autoscaling_group_client
+  aws_autoscaling_policy_scale_up   = module.asg.aws_autoscaling_policy_scale_up
+  aws_autoscaling_policy_scale_down = module.asg.aws_autoscaling_policy_scale_down
+
+  depends_on = [module.asg]
+}
