@@ -12,7 +12,7 @@ resource "aws_lb_target_group" "alb_target_group" {
 
   health_check {
     interval            = 30
-    path = count.index == length(local.ports) - 1 ? "/login" : "/"
+    path                = count.index == length(local.ports) - 1 ? "/login" : "/"
     port                = "traffic-port"
     protocol            = "HTTP"
     timeout             = 5
