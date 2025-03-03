@@ -2,5 +2,4 @@
 [https://registry.terraform.io/providers/hashicorp/aws/latest](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 
 ## Infra Architecture
-![image](https://github.com/user-attachments/assets/8e03336f-70c0-49a9-9328-d9f19760a4f4)
-
+![image](https://github.com/user-attachments/assets/5628729e-b654-45e8-86d6-0c743bdc56fa)
