@@ -180,6 +180,33 @@ sudo systemctl enable nginx
 # Nginx 버전 확인
 nginx -v
 
+# MaxMind GeoIP 설치
+sudo dnf install -y gcc
+sudo dnf install -y libmaxminddb libmaxminddb-devel
+sudo dnf install -y pcre pcre-devel
+sudo dnf install -y zlib zlib-devel
+
+sudo mkdir -p /usr/share/GeoIP/
+sudo curl -o /usr/share/GeoIP/GeoLite2-City.mmdb \
+    "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${maxmind_license_key}&suffix=tar.gz"
+
+nginx_version=\$(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)
+cd /usr/local/src
+sudo curl -LO http://nginx.org/download/nginx-\$nginx_version.tar.gz
+sudo tar zxvf nginx-\$nginx_version.tar.gz
+
+sudo curl -LO https://github.com/leev/ngx_http_geoip2_module/archive/refs/heads/master.zip
+sudo unzip master.zip
+
+nginx_version=\$(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)
+cd /usr/local/src/nginx-\$nginx_version
+sudo ./configure --with-compat --add-dynamic-module=../ngx_http_geoip2_module-master
+sudo make modules
+
+sudo cp objs/ngx_http_geoip2_module.so /usr/lib64/nginx/modules/
+
+ls /usr/lib64/nginx/modules/ | grep geoip2
+
 # nginx.conf 파일 생성
 cat <<EOT > /etc/nginx/nginx.conf
 user root;
@@ -189,11 +216,20 @@ pid /run/nginx.pid;
 
 include /usr/share/nginx/modules/*.conf;
 
+load_module /usr/lib64/nginx/modules/ngx_http_geoip2_module.so;
+
 events {
   worker_connections 1024;
 }
 
 http {
+  geoip2 /usr/share/GeoIP/GeoLite2-Country.mmdb {
+    auto_reload 60m;
+    \$geoip2_metadata_country_build metadata build_epoch;
+    \$geoip2_data_country_code country iso_code;
+    \$geoip2_data_country_name country names en;
+  }
+
   log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
                     '\$status \$body_bytes_sent "\$http_referer" '
                     '"\$http_user_agent" "\$http_x_forwarded_for"';
