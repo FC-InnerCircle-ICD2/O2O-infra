@@ -99,6 +99,7 @@ services:
       - '9080:9080'
     volumes:
       - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
+      - /var/log/nginx/access.log:/var/log/access.log
       - /home/ec2-user/backend/log/application-client.log:/var/log/application-client.log
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
     command:
@@ -331,7 +332,7 @@ docker stop o2o-fe || true
 docker rm o2o-fe || true
 docker rmi yong7317/o2o-fe:latest || true
 docker pull yong7317/o2o-fe:latest
-docker-compose -f /home/ec2-user/frontend/docker-compose.yml up -d
+sudo docker-compose -f /home/ec2-user/frontend/docker-compose.yml up -d
 EOL
 
 sudo chown ec2-user:ec2-user /home/ec2-user/frontend_deploy.sh
