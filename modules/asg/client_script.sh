@@ -128,7 +128,7 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://${grafana_root_url}/loki/api/v1/push
+  - url: http://10.0.6.100/loki/api/v1/push
 
 scrape_configs:
   - job_name: docker
@@ -138,7 +138,32 @@ scrape_configs:
         labels:
           job: app-client
           host: $${HOSTNAME}
-          __path__: /var/log/*.log
+          __path__: /var/log/application-client.log*
+
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/access.log*
+
+    pipeline_stages:
+      - match:
+          selector: '{job="nginx"}'
+          stages:
+            # 정규식을 사용하여 위도(Latitude)와 경도(Longitude) 추출
+            - regex:
+                expression: 'Latitude\s*:\s*(?P<lat>[-+]?[0-9]*\.?[0-9]+),\s*Longitude\s*:\s*(?P<lon>[-+]?[0-9]*\.?[0-9]+)'
+            # 추출한 값을 라벨로 추가
+            - labels:
+                lat: '{{ .lat }}'
+                lon: '{{ .lon }}'
+
+    relabel_configs:
+      - source_labels: [__path__]
+        regex: /var/log/*.log*
+        target_label: __path__
 EOT
 
 sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/config.yml
@@ -183,38 +208,6 @@ sudo systemctl enable nginx
 # Nginx 버전 확인
 nginx -v
 
-# MaxMind GeoIP 설치
-sudo dnf install -y gcc
-sudo dnf install -y libmaxminddb libmaxminddb-devel
-sudo dnf install -y pcre pcre-devel
-sudo dnf install -y zlib zlib-devel
-
-sudo mkdir -p /usr/share/GeoIP/
-sudo aws s3 cp "s3://${s3_backend_bucket}/GeoLite2-City_20250228.tar.gz" "/usr/share/GeoIP"
-sudo aws s3 cp "s3://${s3_backend_bucket}/GeoLite2-Country_20250228.tar.gz" "/usr/share/GeoIP"
-
-nginx_version=\$(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)
-cd /usr/local/src
-sudo curl -LO http://nginx.org/download/nginx-\$nginx_version.tar.gz
-sudo tar zxvf nginx-\$nginx_version.tar.gz
-
-sudo chown -R root:root /usr/local/src/nginx-1.26.2
-
-sudo curl -LO https://github.com/leev/ngx_http_geoip2_module/archive/refs/heads/master.zip
-sudo unzip master.zip
-
-sudo mv /usr/local/src/ngx_http_geoip2_module-master /usr/local/src/ngx_http_geoip2_module
-
-nginx_version=\$(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)
-cd /usr/local/src/nginx-\$nginx_version
-sudo ./configure --with-compat --add-dynamic-module=../ngx_http_geoip2_module
-sudo make
-sudo make install
-
-sudo cp objs/ngx_http_geoip2_module.so /usr/lib64/nginx/modules/
-
-ls /usr/lib64/nginx/modules/ | grep geoip2
-
 # nginx.conf 파일 생성
 cat <<EOT > /etc/nginx/nginx.conf
 user root;
@@ -240,7 +233,8 @@ http {
 
   log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
                     '\$status \$body_bytes_sent "\$http_referer" '
-                    '"\$http_user_agent" "\$http_x_forwarded_for"';
+                    '"\$http_user_agent" "\$http_x_forwarded_for"'
+                    '"Latitude : \$http_x_user_lat" "Longitude : \$http_x_user_lng" ';
 
   access_log  /var/log/nginx/access.log  main;
 
