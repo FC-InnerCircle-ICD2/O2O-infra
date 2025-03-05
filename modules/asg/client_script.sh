@@ -95,6 +95,8 @@ services:
     container_name: promtail
     environment:
       - HOSTNAME=$${HOSTNAME}
+    ports:
+      - '9080:9080'
     volumes:
       - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
       - /home/ec2-user/backend/log/application-client.log:/var/log/application-client.log
@@ -120,6 +122,7 @@ sudo -u ec2-user mkdir -p /home/ec2-user/backend/promtail
 cat <<EOT > /home/ec2-user/backend/promtail/config.yml
 server:
   http_listen_port: 9080
+  log_level: debug
 
 positions:
   filename: /tmp/positions.yaml
@@ -187,21 +190,26 @@ sudo dnf install -y pcre pcre-devel
 sudo dnf install -y zlib zlib-devel
 
 sudo mkdir -p /usr/share/GeoIP/
-sudo curl -o /usr/share/GeoIP/GeoLite2-City.mmdb \
-    "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${maxmind_license_key}&suffix=tar.gz"
+sudo aws s3 cp "s3://${s3_backend_bucket}/GeoLite2-City_20250228.tar.gz" "/usr/share/GeoIP"
+sudo aws s3 cp "s3://${s3_backend_bucket}/GeoLite2-Country_20250228.tar.gz" "/usr/share/GeoIP"
 
 nginx_version=\$(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)
 cd /usr/local/src
 sudo curl -LO http://nginx.org/download/nginx-\$nginx_version.tar.gz
 sudo tar zxvf nginx-\$nginx_version.tar.gz
 
+sudo chown -R root:root /usr/local/src/nginx-1.26.2
+
 sudo curl -LO https://github.com/leev/ngx_http_geoip2_module/archive/refs/heads/master.zip
 sudo unzip master.zip
 
+sudo mv /usr/local/src/ngx_http_geoip2_module-master /usr/local/src/ngx_http_geoip2_module
+
 nginx_version=\$(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)
 cd /usr/local/src/nginx-\$nginx_version
-sudo ./configure --with-compat --add-dynamic-module=../ngx_http_geoip2_module-master
-sudo make modules
+sudo ./configure --with-compat --add-dynamic-module=../ngx_http_geoip2_module
+sudo make
+sudo make install
 
 sudo cp objs/ngx_http_geoip2_module.so /usr/lib64/nginx/modules/
 
