@@ -99,6 +99,7 @@ services:
       - '9080:9080'
     volumes:
       - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
+      - /home/ec2-user/backend/promtail/positions.yaml:/tmp/positions.yaml
       - /var/log/nginx/access.log:/var/log/access.log
       - /home/ec2-user/backend/log/application-client.log:/var/log/application-client.log
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -147,27 +148,26 @@ scrape_configs:
           - localhost
         labels:
           job: nginx
-          __path__: /var/log/nginx/access.log*
-
+          host: $${HOSTNAME}
+          __path__: /var/log/access.log*
     pipeline_stages:
-      - match:
-          selector: '{job="nginx"}'
-          stages:
-            # 정규식을 사용하여 위도(Latitude)와 경도(Longitude) 추출
-            - regex:
-                expression: 'Latitude\s*:\s*(?P<lat>[-+]?[0-9]*\.?[0-9]+),\s*Longitude\s*:\s*(?P<lon>[-+]?[0-9]*\.?[0-9]+)'
-            # 추출한 값을 라벨로 추가
-            - labels:
-                lat: '{{ .lat }}'
-                lon: '{{ .lon }}'
+      - json:
+          expressions:
+            latitude: latitude
+            longitude: longitude
+      - drop:
+          expression: '(latitude|longitude)":"-"'
+      - labels:
+          latitude:
+          longitude:
+EOT
 
-    relabel_configs:
-      - source_labels: [__path__]
-        regex: /var/log/*.log*
-        target_label: __path__
+# promtail positions 파일 생성
+cat <<EOT > /home/ec2-user/backend/promtail/positions.yaml
 EOT
 
 sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/config.yml
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/positions.yaml
 
 # Backend Docker Compose 실행
 cd /home/ec2-user/backend
@@ -218,24 +218,22 @@ pid /run/nginx.pid;
 
 include /usr/share/nginx/modules/*.conf;
 
-load_module /usr/lib64/nginx/modules/ngx_http_geoip2_module.so;
-
 events {
   worker_connections 1024;
 }
 
 http {
-  geoip2 /usr/share/GeoIP/GeoLite2-Country.mmdb {
-    auto_reload 60m;
-    \$geoip2_metadata_country_build metadata build_epoch;
-    \$geoip2_data_country_code country iso_code;
-    \$geoip2_data_country_name country names en;
-  }
-
-  log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                    '\$status \$body_bytes_sent "\$http_referer" '
-                    '"\$http_user_agent" "\$http_x_forwarded_for"'
-                    '"Latitude : \$http_x_user_lat" "Longitude : \$http_x_user_lng" ';
+  log_format main   '{"remote_ip":"$remote_addr",'
+                    '"timestamp":"$time_iso8601",'
+                    '"method":"$request_method",'
+                    '"path":"$request_uri",'
+                    '"protocol":"$server_protocol",'
+                    '"status":"$status",'
+                    '"bytes_sent":"$bytes_sent",'
+                    '"referrer":"$http_referer",'
+                    '"user_agent":"$http_user_agent",'
+                    '"latitude":"$http_x_user_lat",'
+                    '"longitude":"$http_x_user_lng"}';
 
   access_log  /var/log/nginx/access.log  main;
 
@@ -243,6 +241,7 @@ http {
   tcp_nopush          on;
   keepalive_timeout   65;
   types_hash_max_size 4096;
+  client_max_body_size 10M;
 
   include             /etc/nginx/mime.types;
   default_type        application/octet-stream;
