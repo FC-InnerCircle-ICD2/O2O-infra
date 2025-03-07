@@ -99,7 +99,8 @@ services:
       - '9080:9080'
     volumes:
       - /home/ec2-user/backend/promtail/config.yml:/etc/promtail/config.yml
-      - /home/ec2-user/backend/promtail/positions.yaml:/tmp/positions.yaml
+      - /home/ec2-user/backend/promtail/logrotate.d/access:/etc/logrotate.d/access
+      - /home/ec2-user/backend/promtail/logrotate.d/application-client:/etc/logrotate.d/application-client
       - /var/log/nginx/access.log:/var/log/access.log
       - /home/ec2-user/backend/log/application-client.log:/var/log/application-client.log
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -162,12 +163,36 @@ scrape_configs:
           longitude:
 EOT
 
-# promtail positions 파일 생성
-cat <<EOT > /home/ec2-user/backend/promtail/positions.yaml
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/config.yml
+sudo -u ec2-user mkdir -p /home/ec2-user/backend/promtail/logrotate.d
+
+# logrotate 파일 생성
+cat <<EOT > /home/ec2-user/backend/promtail/logrotate.d/application-client
+/var/log/application-client.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 root root
+}
 EOT
 
-sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/config.yml
-sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/positions.yaml
+cat <<EOT > /home/ec2-user/backend/promtail/logrotate.d/access
+/var/log/access.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 root root
+}
+EOT
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/logrotate.d/application-client
+sudo chown -R ec2-user:ec2-user /home/ec2-user/backend/promtail/logrotate.d/access
 
 # Backend Docker Compose 실행
 cd /home/ec2-user/backend
@@ -317,7 +342,9 @@ docker stop app-client || true
 docker rm app-client || true
 docker rmi yong7317/application-client:latest || true
 docker pull yong7317/application-client:latest
-docker-compose -f /home/ec2-user/backend/docker-compose.yml up -d
+sudo docker-compose -f /home/ec2-user/backend/docker-compose.yml up -d
+
+sudo docker restart promtail
 EOL
 
 sudo chown ec2-user:ec2-user /home/ec2-user/backend_deploy.sh
